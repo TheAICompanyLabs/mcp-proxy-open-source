@@ -21,7 +21,7 @@ install_mcp_proxy() {
     fi
 
     # Fetch the latest release version
-    VERSION=$(curl -sL "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    VERSION=$(curl -sL -H "User-Agent: curl" "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
     if [ -z "$VERSION" ]; then
         echo "❌ Failed to fetch latest version. Ensure your GitHub repository is public."
