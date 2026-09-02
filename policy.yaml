@@ -1,0 +1,29 @@
+version: "1.2"
+policies:
+    - tool: create_relations
+      action: REQUIRE_APPROVAL
+      message: 'Auto-scaffolded: Human review required.'
+    - tool: delete_entities
+      action: REQUIRE_APPROVAL
+      message: 'Auto-scaffolded: Human review required.'
+    - tool: delete_observations
+      action: REQUIRE_APPROVAL
+      message: 'Auto-scaffolded: Human review required.'
+    - tool: delete_relations
+      action: REQUIRE_APPROVAL
+      message: 'Auto-scaffolded: Human review required.'
+    - tool: search_nodes
+      action: REQUIRE_APPROVAL
+      message: 'Auto-scaffolded: Human review required.'
+    - tool: open_nodes
+      action: REQUIRE_APPROVAL
+      message: 'Auto-scaffolded: Human review required.'
+    - tool: create_entities
+      action: REQUIRE_APPROVAL
+      message: 'Auto-scaffolded: Human review required.'
+    - tool: add_observations
+      action: REQUIRE_APPROVAL
+      message: 'Auto-scaffolded: Human review required.'
+    - tool: read_graph
+      action: REQUIRE_APPROVAL
+      message: 'Auto-scaffolded: Human review required.'
