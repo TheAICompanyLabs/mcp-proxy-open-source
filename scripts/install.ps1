@@ -1,6 +1,7 @@
 # scripts/install.ps1
 $ErrorActionPreference = "Stop"
 $GitHubRepo = "TheAICompanyLabs/mcp-proxy-open-source"
+"
 $AppName = "mcp-proxy"
 
 Write-Host "📥 Installing Universal MCP Proxy for Windows..."

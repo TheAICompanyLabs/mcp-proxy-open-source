@@ -3,7 +3,7 @@
 set -e
 
 install_mcp_proxy() {
-    GITHUB_REPO="your-github-username/mcp-proxy"
+    GITHUB_REPO="TheAICompanyLabs/mcp-proxy-open-source"
     APP_NAME="mcp-proxy"
 
     echo "📥 Installing Universal MCP Proxy..."
