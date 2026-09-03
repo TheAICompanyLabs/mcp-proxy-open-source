@@ -1,29 +1,18 @@
-version: "1.2"
-policies:
-    - tool: create_relations
-      action: REQUIRE_APPROVAL
-      message: 'Auto-scaffolded: Human review required.'
-    - tool: delete_entities
-      action: REQUIRE_APPROVAL
-      message: 'Auto-scaffolded: Human review required.'
-    - tool: delete_observations
-      action: REQUIRE_APPROVAL
-      message: 'Auto-scaffolded: Human review required.'
-    - tool: delete_relations
-      action: REQUIRE_APPROVAL
-      message: 'Auto-scaffolded: Human review required.'
-    - tool: search_nodes
-      action: REQUIRE_APPROVAL
-      message: 'Auto-scaffolded: Human review required.'
-    - tool: open_nodes
-      action: REQUIRE_APPROVAL
-      message: 'Auto-scaffolded: Human review required.'
-    - tool: create_entities
-      action: REQUIRE_APPROVAL
-      message: 'Auto-scaffolded: Human review required.'
-    - tool: add_observations
-      action: REQUIRE_APPROVAL
-      message: 'Auto-scaffolded: Human review required.'
-    - tool: read_graph
-      action: REQUIRE_APPROVAL
-      message: 'Auto-scaffolded: Human review required.'
+# policy.yaml
+version: "1.0"
+default_action: deny # Default to zero-trust
+
+rules:
+  # Allow the agent to read files, but strictly block directory traversal
+  - tool: "read_file"
+    action: allow
+    conditions:
+      - path_matches: "^/users/local/safe_workspace/.*"
+      - block_traversal: true 
+
+  # Require human approval for any database writes
+  - tool: "query_database"
+    action: require_approval
+    conditions:
+      - contains_regex: "(?i)(INSERT|UPDATE|DELETE|DROP)"
+
