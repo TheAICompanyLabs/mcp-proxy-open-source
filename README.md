@@ -37,17 +37,17 @@ Syntax:
 ```
 mcp-proxy <your-standard-mcp-server-startup-command>
 ```
-# Examples: 
+### Examples: 
 
-# 1. Securing a local SQLite database server
+### 1. Securing a local SQLite database server
 ```
 mcp-proxy uvx mcp-server-sqlite --db-path ./local.db
 ```
-# 2. Securing a filesystem server
+### 2. Securing a filesystem server
 ```
 mcp-proxy npx -y @modelcontextprotocol/server-filesystem /path/to/safe/dir
 ```
-# 3. Securing a custom Python server
+### 3. Securing a custom Python server
 ```
 mcp-proxy python3 main.py
 ```
