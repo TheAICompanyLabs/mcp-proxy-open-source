@@ -1,0 +1,35 @@
+# cookbook/filesystem-and-os/policy.yaml
+# Threats Neutralized: Arbitrary Remote Code Execution (RCE), traversing to sensitive SSH keys or .env files, and wiping disk volumes.
+#Target Servers: @modelcontextprotocol/server-filesystem, bash-mcp, os-mcp
+version: "1.0"
+default_action: deny
+
+rules:
+  # 1. READ OPERATIONS: Strictly sandboxed to a specific project directory
+  - tool: "(?i)^(read_file|list_directory|search_files)$"
+    action: allow
+    conditions:
+      # Block all directory traversal payloads natively
+      - block_traversal: true
+      # Hard-block access to standard secret locations
+      - block_regex: "(?i)(\\.env|\\.aws|\\.ssh|/etc/shadow|/etc/passwd|id_rsa)"
+      # Must operate ONLY within the specified safe workspace
+      - path_matches: "^/opt/safe_workspace/.*"
+
+  # 2. WRITE OPERATIONS: Sandboxed and stripped of executable rights
+  - tool: "(?i)^(write_file|edit_file|create_file)$"
+    action: require_approval
+    conditions:
+      - block_traversal: true
+      - path_matches: "^/opt/safe_workspace/.*"
+      # Prevent the agent from writing executable scripts that could later be run
+      - block_regex: "(?i)\\.(sh|bash|zsh|exe|bat|ps1|cmd)$"
+
+  # 3. BASH / SHELL EXECUTION: High-Risk Interception
+  - tool: "(?i)^(execute_command|run_script|bash)$"
+    action: require_approval
+    conditions:
+      # Block network scanning, downloading external binaries, and disk wiping
+      - block_regex: "(?i)(curl|wget|nc|nmap|rm\\s+-rf|mkfs|chmod|chown)"
+      # Block privilege escalation
+      - block_regex: "(?i)(sudo|su\\s+-)"

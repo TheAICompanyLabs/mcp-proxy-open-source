@@ -1,0 +1,26 @@
+# cookbook/cloud-and-devops/policy.yaml
+# Target Servers: docker_mcp, kubernetes-mcp, aws-mcp, terraform-mcp
+# Threats Neutralized: Cryptojacking (spinning up unauthorized privileged containers), deleting production networks, and wiping cloud IAM roles.
+
+version: "1.0"
+default_action: deny
+
+rules:
+  # 1. READ-ONLY OBSERVABILITY: Allow AI to inspect logs and states seamlessly
+  - tool: "(?i)^(list_containers|list_networks|aws_describe_.*|kubectl_get|terraform_plan|sagemaker_describe.*)$"
+    action: allow
+
+  # 2. CONTAINER & CLOUD EXECUTION: Block crypto-mining and dangerous root mounts
+  - tool: "(?i)^(run_container|create_container|exec_container|aws_invoke_lambda)$"
+    action: require_approval
+    conditions:
+      # Block running privileged Docker containers
+      - block_regex: "(?i)(--privileged|-u\\s+root)"
+      # Block mounting the host machine's root filesystem into a container
+      - block_regex: "(?i)(-v\\s+/:)"
+      # Prevent unauthorized instance types (e.g., limit AWS/Docker to nano/micro sizes if applicable)
+      - block_regex: "(?i)(p3\\.8xlarge|mac1\\.metal)"
+
+  # 3. RESOURCE DESTRUCTION: Absolute Zero-Trust (No human override allowed)
+  - tool: "(?i)^(remove_container|remove_volume|remove_network|aws_delete_.*|kubectl_delete|terraform_destroy)$"
+    action: deny

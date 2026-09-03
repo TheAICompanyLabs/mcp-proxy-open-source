@@ -1,0 +1,29 @@
+# cookbook/database-and-data/policy.yaml
+#Target Servers: @modelcontextprotocol/server-postgres, @modelcontextprotocol/server-sqlite, mysql-mcp
+# Threats Neutralized: Catastrophic data loss, unauthorized schema changes, mass deletions without filtering, and privilege escalation.
+
+version: "1.0"
+default_action: deny
+
+rules:
+  # 1. SCHEMA EXPLORATION: Frictionless read-only access
+  - tool: "(?i)^(table://list|list_tables|describe_schema)$"
+    action: allow
+
+  # 2. READ-ONLY QUERIES: Allowed automatically, but strictly sandboxed
+  - tool: "(?i)^(sql://query|query_database|run_sql)$"
+    action: allow
+    conditions:
+      # Must start with SELECT or EXPLAIN
+      - match_exact_regex: "(?i)^(SELECT|EXPLAIN)\\s+.*"
+      # Hard-block SQL injection attempts that chain commands via semicolons
+      - block_regex: "(?i);\\s*(DROP|DELETE|UPDATE|INSERT|TRUNCATE|ALTER)"
+
+  # 3. DATA MODIFICATION: Requires a human circuit-breaker via TUI
+  - tool: "(?i)^(sql://query|query_database|write_query)$"
+    action: require_approval
+    conditions:
+      # Catch mutations, but completely hard-block schema destruction
+      - block_regex: "(?i)\\b(DROP|TRUNCATE|ALTER|GRANT|REVOKE)\\b"
+      # Prevent mass updates/deletes that forget the WHERE clause (e.g., "DELETE FROM users;")
+      - block_regex: "(?i)^(UPDATE|DELETE)\\s+[A-Za-z0-9_]+(\\s*|;)$" 

@@ -1,0 +1,29 @@
+# cookbook/productivity-and-comms/policy.yaml
+# Target Servers: slack-mcp, gmail-mcp, google-drive-mcp, notion-mcp, cal-mcp
+# Threats Neutralized: Hallucinated external emails, unauthorized broadcasts to public Slack channels, 
+    #mass deletion of workspace files, and calendar wiping.
+    
+version: "1.0"
+default_action: deny
+
+rules:
+  # 1. READ-ONLY SEARCH & RETRIEVAL: Frictionless reading of context
+  - tool: "(?i)^(slack_get_channel_history|gmail_read_thread|drive_search_files|notion_get_page|cal_get_events)$"
+    action: allow
+
+  # 2. MESSAGING & EMAILS: Require approval for external communication
+  - tool: "(?i)^(gmail_send_message|gmail_create_draft|slack_post_message)$"
+    action: require_approval
+    conditions:
+      # Restrict Slack posting to designated bot/testing channels
+      - block_regex: "(?i)(#general|#all-|@everyone|@channel)"
+      # Hard-block sending emails to high-risk public or competitor domains automatically
+      - block_regex: "(?i)to:\\s*.*(all-employees|investors|customers)@"
+
+  # 3. CONTENT UPDATES: Notion & Calendar mutation
+  - tool: "(?i)^(notion_update_page|notion_append_block|cal_create_event)$"
+    action: require_approval
+
+  # 4. IRREVERSIBLE DATA DESTRUCTION: Zero-Trust baseline
+  - tool: "(?i)^(drive_delete_file|drive_trash_file|gmail_delete_message|notion_delete_database|cal_delete_event)$"
+    action: deny

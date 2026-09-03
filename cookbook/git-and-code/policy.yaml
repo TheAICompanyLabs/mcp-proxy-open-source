@@ -1,0 +1,33 @@
+# cookbook/git-and-code/policy.yaml
+# Threats Neutralized: Proprietary source code exfiltration, destructive force-pushes, unauthorized merges to production branches, and repository deletion.
+#Target Servers: @modelcontextprotocol/server-github, git-mcp, gitlab-mcp
+version: "1.0"
+default_action: deny
+
+rules:
+  # 1. READ-ONLY ACTIONS: Allow safe exploration of code
+  - tool: "(?i)^(git_status|git_diff|git_log|github_search_repositories|github_get_issue)$"
+    action: allow
+    conditions:
+      # Optional: Restrict visibility strictly to internal organization repositories
+      - block_regex: "(?i)(public|external)"
+
+  # 2. COMMIT & PUSH PROTECTION: The most critical developer guardrail
+  - tool: "(?i)^(git_push|git_commit|github_create_commit)$"
+    action: require_approval
+    conditions:
+      # CRITICAL: Hard-block any attempt to push to main, master, or production branches
+      - block_regex: "(?i)(main|master|prod|release)"
+      # CRITICAL: Hard-block force pushing (e.g., --force, -f) which rewrites history
+      - block_regex: "(?i)(--force|-f)"
+
+  # 3. PULL REQUESTS: Agents can draft, but humans must merge
+  - tool: "(?i)^(github_create_pull_request|gitlab_create_merge_request)$"
+    action: allow # Allowing PR creation is safe as it requires human review anyway
+
+  - tool: "(?i)^(github_merge_pull_request|gitlab_merge_request)$"
+    action: deny # Hard-block. AI should never merge its own code.
+
+  # 4. DESTRUCTIVE ACTIONS: Absolute Zero-Trust
+  - tool: "(?i)^(github_delete_repository|git_branch_delete)$"
+    action: deny # Hard-block. No human-in-the-loop override allowed.
