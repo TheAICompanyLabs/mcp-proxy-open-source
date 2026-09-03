@@ -9,7 +9,7 @@ Local AI agents executing arbitrary tool commands is a critical security vulnera
 
 **MCP Proxy sits exactly in the middle.** It intercepts JSON-RPC payloads via standard input/output (stdio) in microseconds, enforcing strict, human-readable YAML policies before any command executes.
 
-![MCP Proxy blocking a malicious command](./assets/demo.gif)
+![MCP Proxy blocking a malicious command](./assets/mcp-proxy-opensource.mp4)
 
 ## ⚡ Core Architecture & Capabilities
 
