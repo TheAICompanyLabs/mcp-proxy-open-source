@@ -10,7 +10,7 @@ Local AI agents executing arbitrary tool commands is a critical security vulnera
 **MCP Proxy sits exactly in the middle.** It intercepts JSON-RPC payloads via standard input/output (stdio) in microseconds, enforcing strict, human-readable YAML policies before any command executes.
 
 ![Demo GIF Placeholder: Show a red terminal alert blocking a 'rm -rf /' command]
-*(Add your 5-second TUI block GIF here)*
+*((./assets/demo.gif))*
 
 ## ⚡ Core Architecture & Capabilities
 
