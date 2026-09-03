@@ -1,0 +1,19 @@
+version: "1.0"
+default_action: deny
+
+rules:
+  # 1. Read access restricted strictly to a specific project folder
+  - tool: "read_file"
+    action: allow
+    conditions:
+      - block_traversal: true
+      - path_matches: "^/Users/dev/workspace/safe_project/.*"
+
+  # 2. Write access requires TUI approval AND blocks dangerous extensions
+  - tool: "write_file"
+    action: require_approval
+    conditions:
+      - block_traversal: true
+      - path_matches: "^/Users/dev/workspace/safe_project/.*"
+      # Do not allow AI to write executable scripts
+      - block_regex: "(?i)\\.(sh|bash|exe|app|bat|ps1)$"
