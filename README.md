@@ -108,7 +108,7 @@ Press [d] to deny. Claude will gracefully respond that it is not permitted to ac
 
 ## 📖 The Policy Cookbook
 Security configurations should live alongside your code. We provide "Gold Standard" templates for the 6 most critical MCP threat vectors. Developers can immediately copy, modify, and dry-run these policies during testing.
-👉 View the complete Policy Cookbook here.
+👉 View the complete Policy Cookbook [here](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/tree/260c26af853b7cc9c80c52fbcff69295d2db0a7f/cookbook)
 1. Git & Code Management
 ⚬	Target Servers: @modelcontextprotocol/server-github, git-mcp
 ⚬	Threats Neutralized: Code exfiltration, destructive force-pushes (--force), repository deletion.
