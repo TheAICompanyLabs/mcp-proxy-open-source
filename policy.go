@@ -60,8 +60,8 @@ func loadPolicy(filename string, logger *log.Logger) {
 
 	var config PolicyConfig
 	if err := yaml.Unmarshal(data, &config); err != nil {
-		logger.Printf("Failed to parse YAML: %v\n", err)
-		return
+		// CRITICAL: The proxy must fatally exit immediately when policy syntax is corrupted.
+		log.Fatalf("Fatal: Failed to parse %s: %v. Enforcing zero-trust lock.", filename, err)
 	}
 
 	policyMu.Lock()
