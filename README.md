@@ -31,7 +31,7 @@ curl -sSfL https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-sou
 irm https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-source/main/scripts/install.ps1 | iex
 ```
 
-*** 🔄 The Zero-Friction Workflow (Dry-Run to Production in 60 Seconds):
+### 🔄 The Zero-Friction Workflow (Dry-Run to Production in 60 Seconds):
 
 We built MCP Proxy so you can immediately secure your local environment without learning a complex new framework. The "Aha!" moment and customization happen in parallel.
 	
@@ -61,9 +61,9 @@ mcp-proxy npx -y @modelcontextprotocol/server-filesystem /path/to/safe/dir
 mcp-proxy python3 main.py
 ```
  
-**** Interactive Demo: Securing the Filesystem Server
+### 4. Interactive Demo: Securing the Filesystem Server
 Step 1: Install the Proxy
-Bash
+Bash 
 ```
 curl -sSfL https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-source/main/scripts/install.sh | bash
 ```
