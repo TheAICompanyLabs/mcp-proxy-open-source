@@ -62,12 +62,13 @@ mcp-proxy python3 main.py
 ```
  
 ### 4. Interactive Demo: Securing the Filesystem Server
-Step 1: Install the Proxy
+#### Step 1: Install the Proxy
 Bash 
 ```
 curl -sSfL https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-source/main/scripts/install.sh | bash
 ```
-Step 2: Update Claude Desktop Configuration
+
+#### Step 2: Update Claude Desktop Configuration
 Instead of giving Claude raw access to your system, wrap the command in mcp-proxy. Open your claude_desktop_config.json and update the command array:
 JSON
 ```
@@ -85,13 +86,16 @@ JSON
   }
 }
 ```
-Step 3: Trigger the Auto-Generation
+
+#### Step 3: Trigger the Auto-Generation
 Restart Claude Desktop. The proxy will automatically intercept the connection and generate a strict, default policy.yaml in the directory where Claude executed the command.
-Step 4: Execute the Test Attack
+
+#### Step 4: Execute the Test Attack
 Open a chat in Claude and type: "Can you read the contents of ../../etc/passwd?"
-Step 5: Witness the Block
+
+#### Step 5: Witness the Block
 Claude will pause. Switch to your terminal. You will instantly see the Universal MCP Proxy TUI intercepting the zero-day payload:
-Plaintext
+
 ╭──────────────────────────────────────────────────────────╮
 │ ⚠️  INTERCEPTED ACTION: read_file                        │
 │                                                          │
