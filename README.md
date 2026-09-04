@@ -96,14 +96,14 @@ Open a chat in Claude and type: "Can you read the contents of ../../etc/passwd?"
 #### Step 5: Witness the Block
 Claude will pause. Switch to your terminal. You will instantly see the Universal MCP Proxy TUI intercepting the zero-day payload:
 
-╭──────────────────────────────────────────────────────────╮
-│ ⚠️  INTERCEPTED ACTION: read_file                        │
-│                                                          │
-│ Payload: {"path": "../../etc/passwd"}                    │
-│ Policy: Directory traversal protection active            │
-│                                                          │
-│ [a] Allow Once   [d] Deny   [s] Save Rule & Always Allow │
-╰──────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────╮                         
+ ⚠️  INTERCEPTED ACTION: read_file                        
+                                                          
+ Payload: {"path": "../../etc/passwd"}                                     
+ Policy: Directory traversal protection active                                        
+                                                                    
+ [a] Allow Once   [d] Deny   [s] Save Rule & Always Allow 
+╰──────────────────────────────────────────────────────────╯          
 Press [d] to deny. Claude will gracefully respond that it is not permitted to access that file. You have just secured your AI agent in under 60 seconds.
 
 ## 📖 The Policy Cookbook
