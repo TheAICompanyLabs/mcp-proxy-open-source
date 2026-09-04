@@ -1,0 +1,55 @@
+version: "1.2"
+policies:
+  # 1. OS & Filesystem (Directory Traversal)
+  - tool: "read_file"
+    action: "REQUIRE_APPROVAL"
+    message: "Directory traversal attack blocked."
+    conditions:
+      - argument: "path"
+        operator: "regex"
+        value: "(?i)(\\.\\./\\.\\.)"
+
+  # 2. Web & SSRF (Cloud Metadata)
+  - tool: "fetch_url"
+    action: "REQUIRE_APPROVAL"
+    message: "SSRF attack blocked."
+    conditions:
+      - argument: "url"
+        operator: "regex"
+        value: "(?i)(169\\.254\\.169\\.254|localhost)"
+
+  # 3. Database (Destructive SQL)
+  - tool: "query_database"
+    action: "REQUIRE_APPROVAL"
+    message: "Destructive SQL command blocked."
+    conditions:
+      - argument: "query"
+        operator: "regex"
+        value: "(?i)(DROP|TRUNCATE|DELETE)"
+
+  # 4. Git & Code (Force Pushing to Main)
+  - tool: "git_push"
+    action: "REQUIRE_APPROVAL"
+    message: "Unauthorized push to production branch blocked."
+    conditions:
+      - argument: "branch"
+        operator: "regex"
+        value: "(?i)(^main$|^master$)"
+
+  # 5. Cloud & DevOps (Destroying Infrastructure)
+  - tool: "aws_execute"
+    action: "REQUIRE_APPROVAL"
+    message: "Destructive cloud operation blocked."
+    conditions:
+      - argument: "command"
+        operator: "regex"
+        value: "(?i)(delete-cluster|terminate-instances)"
+
+  # 6. Productivity (Public Slack Broadcast)
+  - tool: "slack_post"
+    action: "REQUIRE_APPROVAL"
+    message: "Unauthorized broadcast to public channel blocked."
+    conditions:
+      - argument: "channel"
+        operator: "regex"
+        value: "(?i)(#general|#all-hands)"
