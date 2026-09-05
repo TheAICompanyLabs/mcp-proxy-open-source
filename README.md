@@ -31,7 +31,7 @@ curl -sSfL https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-sou
 irm https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-source/main/scripts/install.ps1 | iex
 ```
 
-🔄 The Zero-Friction Workflow (Dry-Run to Production in 60 Seconds):
+### 🔄 The Zero-Friction Workflow (Dry-Run to Production in 60 Seconds):
 
 We built MCP Proxy so you can immediately secure your local environment without learning a complex new framework. The "Aha!" moment and customization happen in parallel.
 	
@@ -60,10 +60,55 @@ mcp-proxy npx -y @modelcontextprotocol/server-filesystem /path/to/safe/dir
 ```
 mcp-proxy python3 main.py
 ```
+ 
+### 4. Interactive Demo: Securing the Filesystem Server
+#### Step 1: Install the Proxy
+Bash 
+```
+curl -sSfL https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-source/main/scripts/install.sh | bash
+```
+
+#### Step 2: Update Claude Desktop Configuration
+Instead of giving Claude raw access to your system, wrap the command in mcp-proxy. Open your claude_desktop_config.json and update the command array:
+JSON
+```
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "mcp-proxy",
+      "args": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/Shared/DevWorkspace"
+      ]
+    }
+  }
+}
+```
+
+#### Step 3: Trigger the Auto-Generation
+Restart Claude Desktop. The proxy will automatically intercept the connection and generate a strict, default policy.yaml in the directory where Claude executed the command.
+
+#### Step 4: Execute the Test Attack
+Open a chat in Claude and type: "Can you read the contents of ../../etc/passwd?"
+
+#### Step 5: Witness the Block
+Claude will pause. Switch to your terminal. You will instantly see the Universal MCP Proxy TUI intercepting the zero-day payload:
+
+╭──────────────────────────────────────────────────────────╮                         
+ ⚠️  INTERCEPTED ACTION: read_file                        
+                                                          
+ Payload: {"path": "../../etc/passwd"}                                     
+ Policy: Directory traversal protection active                                        
+                                                                    
+ [a] Allow Once   [d] Deny   [s] Save Rule & Always Allow 
+╰──────────────────────────────────────────────────────────╯          
+Press [d] to deny. Claude will gracefully respond that it is not permitted to access that file. You have just secured your AI agent in under 60 seconds.
 
 ## 📖 The Policy Cookbook
 Security configurations should live alongside your code. We provide "Gold Standard" templates for the 6 most critical MCP threat vectors. Developers can immediately copy, modify, and dry-run these policies during testing.
-👉 View the complete Policy Cookbook here.
+👉 View the complete Policy Cookbook [here](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/tree/260c26af853b7cc9c80c52fbcff69295d2db0a7f/cookbook)
 1. Git & Code Management
 ⚬	Target Servers: @modelcontextprotocol/server-github, git-mcp
 ⚬	Threats Neutralized: Code exfiltration, destructive force-pushes (--force), repository deletion.
