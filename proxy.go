@@ -9,12 +9,21 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+
 	"time"
 
 	"github.com/ncruces/zenity"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+type logMsg string
+
+// interceptMsg notifies the TUI that a tool call requires human approval.
+type interceptMsg struct {
+	ToolName string
+	Reason   string
+}
 
 // --- RATE LIMITER CONFIGURATION ---
 var (
@@ -84,6 +93,18 @@ func handleInboundTraffic(serverStdin io.Writer, prog *tea.Program, logger *log.
 		logger.Printf("HOST_REQUEST: %s\n", rawLine)
 		if prog != nil {
 			prog.Send(logMsg(fmt.Sprintf("REQ: %s", rawLine)))
+		}
+		var rpcReq map[string]interface{}
+		if err := json.Unmarshal([]byte(rawLine), &rpcReq); err != nil {
+			// Surface malformed syntax to the TUI
+			if prog != nil {
+				prog.Send(logMsg("[MALFORMED] Corrupted JSON-RPC received. Frame rejected."))
+			}
+
+			// Emit RFC-compliant JSON-RPC parse error (-32700)
+			parseErrResponse := `{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Parse error: Invalid or malformed JSON payload"}}`
+			os.Stdout.WriteString(parseErrResponse + "\n")
+			return
 		}
 
 		var payload map[string]interface{}

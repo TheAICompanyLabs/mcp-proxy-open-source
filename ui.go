@@ -8,118 +8,116 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type logMsg string
-type interceptMsg struct {
-	ToolName string
-	Reason   string
+var (
+	systemStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#38BDF8")).Bold(true)
+	reqStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#E2E8F0"))
+	blockedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#F87171")).Bold(true)
+	statusStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#94A3B8")).MarginTop(1)
+
+	boxStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#22C55E")).
+			Padding(1, 2).
+			Width(72).
+			MaxWidth(72)
+
+	titleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FB923C")).Bold(true)
+	keyStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#FACC15")).Bold(true)
+)
+
+type uiModel struct {
+	serverCmd      string
+	logs           []string
+	isIntercepting bool
+	interceptData  interceptMsg
 }
 
-type UIModel struct {
-	logs        []string
-	intercepted bool
-	pendingTool string
-	reason      string
-	serverName  string
-}
-
-func initialUIModel(serverName string) UIModel {
-	return UIModel{
-		logs:       []string{fmt.Sprintf("[SYSTEM] Proxy active. Wrapping: %s", serverName)},
-		serverName: serverName,
+func initialUIModel(cmd string) uiModel {
+	return uiModel{
+		serverCmd: cmd,
+		logs:      []string{},
 	}
 }
 
-func (m UIModel) Init() tea.Cmd {
+func (m uiModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m UIModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
+		if m.isIntercepting {
+			switch msg.String() {
+			case "a", "s":
+				m.isIntercepting = false
+				pendingDecisionChan <- true
+				m.logs = append(m.logs, blockedStyle.Render("=> ALLOWED: ")+m.interceptData.ToolName)
+				return m, nil
+			case "d":
+				m.isIntercepting = false
+				pendingDecisionChan <- false
+				m.logs = append(m.logs, blockedStyle.Render("=> DENIED: ")+m.interceptData.ToolName)
+				return m, nil
+			}
+		}
+
+		if msg.String() == "q" || msg.String() == "ctrl+c" {
 			return m, tea.Quit
-
-		case "a", "A":
-			if m.intercepted {
-				m.logs = append(m.logs, fmt.Sprintf("🟢 [ALLOWED ONCE]: %s", m.pendingTool))
-				m.intercepted = false
-				if pendingDecisionChan != nil {
-					pendingDecisionChan <- true
-				}
-			}
-
-		case "d", "D":
-			if m.intercepted {
-				m.logs = append(m.logs, fmt.Sprintf("🔴 [DENIED]: %s", m.pendingTool))
-				m.intercepted = false
-				if pendingDecisionChan != nil {
-					pendingDecisionChan <- false
-				}
-			}
-
-		case "s", "S":
-			if m.intercepted {
-				m.logs = append(m.logs, fmt.Sprintf("💾 [SAVED & ALLOWED]: %s", m.pendingTool))
-				m.intercepted = false
-
-				policyMu.Lock()
-				activePolicies[m.pendingTool] = Policy{
-					Tool:    m.pendingTool,
-					Action:  "ALLOW",
-					Message: "Auto-saved via TUI organic tuning.",
-				}
-				policyMu.Unlock()
-
-				// Use the global appLogger defined in main.go
-				savePolicyFile("policy.yaml", appLogger)
-
-				if pendingDecisionChan != nil {
-					pendingDecisionChan <- true
-				}
-			}
 		}
 
 	case logMsg:
 		m.logs = append(m.logs, string(msg))
-		if len(m.logs) > 12 {
+		if len(m.logs) > 15 {
 			m.logs = m.logs[1:]
 		}
+		return m, nil
 
 	case interceptMsg:
-		m.intercepted = true
-		m.pendingTool = msg.ToolName
-		m.reason = msg.Reason
+		m.isIntercepting = true
+		m.interceptData = msg
+		return m, nil
 	}
-
 	return m, nil
 }
 
-func (m UIModel) View() string {
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("205")).MarginBottom(1)
-	logStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	alertStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("9")).Border(lipgloss.RoundedBorder()).Padding(1)
-
+func (m uiModel) View() string {
 	var b strings.Builder
 
-	// Dynamically render the target server in the header
-	header := fmt.Sprintf("🛡️  Universal MCP Proxy  [Target: %s]", m.serverName)
-	b.WriteString(titleStyle.Render(header))
+	// Header
+	b.WriteString(systemStyle.Render(fmt.Sprintf("[SYSTEM] Proxy active. Wrapping: %s", m.serverCmd)))
 	b.WriteString("\n\n")
 
+	// Logs
 	for _, l := range m.logs {
-		b.WriteString(logStyle.Render(l))
-		b.WriteString("\n")
+		if strings.HasPrefix(l, "REQ:") {
+			b.WriteString(reqStyle.Render(l))
+		} else if strings.Contains(l, "BLOCKED") || strings.Contains(l, "DENIED") || strings.Contains(l, "MALFORMED") {
+			b.WriteString(blockedStyle.Render(l))
+		} else {
+			b.WriteString(l)
+		}
+		b.WriteString("\n") // Append newline separately
 	}
 
-	b.WriteString("\n")
-
-	if m.intercepted {
-		alert := fmt.Sprintf("⚠️  INTERCEPTED ACTION: %s\n\nPolicy: %s\n\n[a] Allow Once   [d] Deny   [s] Save Rule & Always Allow", m.pendingTool, m.reason)
-		b.WriteString(alertStyle.Render(alert))
+	// Dynamic Footer
+	if m.isIntercepting {
+		b.WriteString("\n")
+		b.WriteString(m.renderPromptBox())
 	} else {
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("241")).Render("Status: Active | [q] Quit"))
+		b.WriteString(statusStyle.Render("\nStatus: Active | [q] Quit\n"))
 	}
 
 	return b.String()
+}
+
+func (m uiModel) renderPromptBox() string {
+	content := fmt.Sprintf("%s INTERCEPTED ACTION: %s\n\nPolicy: %s\n\n%s Allow Once   %s Deny   %s Save Rule & Always Allow",
+		titleStyle.Render("[!]"),
+		m.interceptData.ToolName,
+		m.interceptData.Reason,
+		keyStyle.Render("[a]"),
+		keyStyle.Render("[d]"),
+		keyStyle.Render("[s]"),
+	)
+	return boxStyle.Render(content)
 }
