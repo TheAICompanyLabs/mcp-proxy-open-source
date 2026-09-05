@@ -159,8 +159,11 @@ Sharing a policy.yaml file across a team is trivial. But for regulated enterpris
 Native MCP built-in logs are merely ephemeral session logs stored in-memory or temp files. Once a session ends, the logs are permanently lost, providing zero end-to-end traceability. Furthermore, native logs fail to capture high-level security events like blocked policy violations or unauthorized access attempts.
 Universal MCP Proxy solves this by acting as a centralized broker for all MCP traffic.
 Our upcoming Enterprise Gateway pushes beyond the gold standard by providing:
+
 ⚬	Cryptographic Tamper-Evident Logs: Blockchain-style hash-chaining for log records so any alteration can be mathematically detected.
+
 ⚬	Comprehensive Security Event Tracking: Granular logging of policy enforcements, blocked directory traversals, and prompt sanitizations.
+
 ⚬	SIEM Integration Ready: Seamlessly route these immutable logs into Datadog, Splunk, or OpenSearch to meet SOC 2, HIPAA, and ISO 27001 audit requirements.
 
 Visit TheAICompanyLabs to secure your production AI infrastructure.
