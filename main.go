@@ -2,10 +2,14 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -15,6 +19,45 @@ var (
 	pendingDecisionChan chan bool
 	appLogger           *log.Logger
 )
+
+const currentVersion = "v1.0.1"
+
+func checkUpdateAsync() {
+	// 1. Run silently in the background
+	go func() {
+		home, _ := os.UserHomeDir()
+		cacheFile := filepath.Join(home, ".mcp-proxy", "last_update_check")
+
+		// 2. Only check once every 24 hours
+		if info, err := os.Stat(cacheFile); err == nil {
+			if time.Since(info.ModTime()) < 24*time.Hour {
+				return
+			}
+		}
+
+		// 3. Ping GitHub Releases API
+		resp, err := http.Get("https://api.github.com/repos/TheAICompanyLabs/mcp-proxy-open-source/releases/latest")
+		if err != nil || resp.StatusCode != 200 {
+			return
+		}
+		defer resp.Body.Close()
+
+		var release struct {
+			TagName string `json:"tag_name"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&release); err == nil {
+			// 4. Update the cache file timestamp
+			os.MkdirAll(filepath.Dir(cacheFile), 0755)
+			os.WriteFile(cacheFile, []byte(release.TagName), 0644)
+
+			// 5. Notify if the version is newer
+			if release.TagName != currentVersion && release.TagName != "" {
+				fmt.Printf("\n\033[33m🚀 A new version of Universal MCP Proxy is available! (%s -> %s)\033[0m\n", currentVersion, release.TagName)
+				fmt.Println("\033[33mRun your installation script to update.\033[0m")
+			}
+		}
+	}()
+}
 
 func handleLogin() {
 	reader := bufio.NewReader(os.Stdin)
