@@ -173,18 +173,26 @@ func main() {
 
 	var prog *tea.Program
 	var tty *os.File
-	var ttyErr error
 
 	// 2. Only boot the Terminal UI if a TTY is attached
 	if !isHeadless {
-		ttyPath := "/dev/tty"
+		var ttyIn, ttyOut *os.File
+		var ttyErr error
+
 		if runtime.GOOS == "windows" {
-			ttyPath = "CONIN$" // Native Windows console input
+			// Windows strictly separates input (CONIN$) and output (CONOUT$) streams
+			ttyIn, ttyErr = os.OpenFile("CONIN$", os.O_RDONLY, 0)
+			if ttyErr == nil {
+				ttyOut, ttyErr = os.OpenFile("CONOUT$", os.O_WRONLY, 0)
+			}
+		} else {
+			// macOS/Linux use a single bidirectional TTY
+			ttyIn, ttyErr = os.OpenFile("/dev/tty", os.O_RDWR, 0)
+			ttyOut = ttyIn
 		}
 
-		tty, ttyErr = os.OpenFile(ttyPath, os.O_RDWR, 0)
 		if ttyErr == nil {
-			prog = tea.NewProgram(initialUIModel(serverCmdString), tea.WithInput(tty), tea.WithOutput(tty))
+			prog = tea.NewProgram(initialUIModel(serverCmdString), tea.WithInput(ttyIn), tea.WithOutput(ttyOut))
 		} else {
 			appLogger.Printf("Failed to open keyboard TTY: %v\n", ttyErr)
 		}
