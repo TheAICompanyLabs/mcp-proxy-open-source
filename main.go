@@ -169,25 +169,10 @@ func main() {
 	isHeadless := (fileInfo.Mode() & os.ModeCharDevice) == 0
 
 	var prog *tea.Program
-	var ttyIn, ttyOut *os.File
-	var ttyErr error
 
 	if !isHeadless {
-		if runtime.GOOS == "windows" {
-			ttyIn, ttyErr = os.OpenFile("CONIN$", os.O_RDONLY, 0)
-			if ttyErr == nil {
-				ttyOut, ttyErr = os.OpenFile("CONOUT$", os.O_WRONLY, 0)
-			}
-		} else {
-			ttyIn, ttyErr = os.OpenFile("/dev/tty", os.O_RDWR, 0)
-			ttyOut = ttyIn
-		}
-
-		if ttyErr == nil {
-			prog = tea.NewProgram(initialUIModel(serverCmdString), tea.WithInput(ttyIn), tea.WithOutput(ttyOut))
-		} else {
-			appLogger.Printf("Failed to open keyboard TTY: %v\n", ttyErr)
-		}
+		// Bubble Tea automatically handles Windows/Mac terminal attachment natively
+		prog = tea.NewProgram(initialUIModel(serverCmdString))
 	} else {
 		appLogger.Println("[SYSTEM] Running in Headless Mode. Interactive TUI disabled.")
 	}
@@ -200,12 +185,6 @@ func main() {
 	if prog != nil {
 		if _, err := prog.Run(); err != nil {
 			appLogger.Printf("TUI runtime error: %v", err)
-		}
-		if ttyIn != nil {
-			ttyIn.Close()
-		}
-		if ttyOut != nil && ttyOut != ttyIn {
-			ttyOut.Close()
 		}
 	} else {
 		cmd.Wait()
