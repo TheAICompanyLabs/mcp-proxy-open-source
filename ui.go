@@ -8,18 +8,24 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// --- GOLD STANDARD UI PALETTE ---
 var (
 	systemStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#38BDF8")).Bold(true)
-	reqStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#E2E8F0"))
-	blockedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#F87171")).Bold(true)
+	reqStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#94A3B8"))            // Slate gray
+	resStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#64748B"))            // Darker slate
+	blockedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#F87171")).Bold(true) // Alert Red
+	allowedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#4ADE80")).Bold(true) // Success Green
 	statusStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#94A3B8")).MarginTop(1)
+
+	// Strict widths prevent terminal auto-wrapping (which causes ghost borders)
+	appContainer = lipgloss.NewStyle().MaxWidth(100)
+	logWrapper   = lipgloss.NewStyle().MaxWidth(96)
 
 	boxStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("#22C55E")).
 			Padding(1, 2).
-			Width(72).
-			MaxWidth(72)
+			Width(76)
 
 	titleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FB923C")).Bold(true)
 	keyStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#FACC15")).Bold(true)
@@ -51,13 +57,13 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "a", "s":
 				m.isIntercepting = false
 				pendingDecisionChan <- true
-				m.logs = append(m.logs, blockedStyle.Render("=> ALLOWED: ")+m.interceptData.ToolName)
-				return m, nil
+				m.logs = append(m.logs, allowedStyle.Render("=> ALLOWED: ")+m.interceptData.ToolName)
+				return m, tea.ClearScreen // Wipe ghost borders
 			case "d":
 				m.isIntercepting = false
 				pendingDecisionChan <- false
 				m.logs = append(m.logs, blockedStyle.Render("=> DENIED: ")+m.interceptData.ToolName)
-				return m, nil
+				return m, tea.ClearScreen // Wipe ghost borders
 			}
 		}
 
@@ -66,8 +72,12 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case logMsg:
-		m.logs = append(m.logs, string(msg))
-		if len(m.logs) > 15 {
+		// Core Fix: Strip carriage returns that hijack the terminal cursor
+		cleanLog := strings.ReplaceAll(string(msg), "\r", "")
+		cleanLog = strings.TrimSpace(cleanLog)
+
+		m.logs = append(m.logs, cleanLog)
+		if len(m.logs) > 12 { // Reduced log count slightly to keep the UI clean
 			m.logs = m.logs[1:]
 		}
 		return m, nil
@@ -75,7 +85,7 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case interceptMsg:
 		m.isIntercepting = true
 		m.interceptData = msg
-		return m, nil
+		return m, tea.ClearScreen
 	}
 	return m, nil
 }
@@ -83,23 +93,29 @@ func (m uiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m uiModel) View() string {
 	var b strings.Builder
 
-	// Header
 	b.WriteString(systemStyle.Render(fmt.Sprintf("[SYSTEM] Proxy active. Wrapping: %s", m.serverCmd)))
 	b.WriteString("\n\n")
 
-	// Logs
 	for _, l := range m.logs {
+		var styledLog string
+		// Map styles dynamically
 		if strings.HasPrefix(l, "REQ:") {
-			b.WriteString(reqStyle.Render(l))
+			styledLog = reqStyle.Render(l)
+		} else if strings.HasPrefix(l, "RES:") {
+			styledLog = resStyle.Render(l)
 		} else if strings.Contains(l, "BLOCKED") || strings.Contains(l, "DENIED") || strings.Contains(l, "MALFORMED") {
-			b.WriteString(blockedStyle.Render(l))
+			styledLog = blockedStyle.Render(l)
+		} else if strings.Contains(l, "ALLOWED") {
+			styledLog = allowedStyle.Render(l)
 		} else {
-			b.WriteString(l)
+			styledLog = l
 		}
-		b.WriteString("\n") // Append newline separately
+
+		// Core Fix: Force Lip Gloss to wrap the text so the terminal doesn't tear
+		b.WriteString(logWrapper.Render(styledLog))
+		b.WriteString("\n")
 	}
 
-	// Dynamic Footer
 	if m.isIntercepting {
 		b.WriteString("\n")
 		b.WriteString(m.renderPromptBox())
@@ -107,7 +123,7 @@ func (m uiModel) View() string {
 		b.WriteString(statusStyle.Render("\nStatus: Active | [q] Quit\n"))
 	}
 
-	return b.String()
+	return appContainer.Render(b.String())
 }
 
 func (m uiModel) renderPromptBox() string {

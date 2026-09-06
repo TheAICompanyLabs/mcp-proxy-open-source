@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -176,9 +177,16 @@ func main() {
 
 	// 2. Only boot the Terminal UI if a TTY is attached
 	if !isHeadless {
-		tty, ttyErr = os.OpenFile("/dev/tty", os.O_RDWR, 0)
+		ttyPath := "/dev/tty"
+		if runtime.GOOS == "windows" {
+			ttyPath = "CONIN$" // Native Windows console input
+		}
+
+		tty, ttyErr = os.OpenFile(ttyPath, os.O_RDWR, 0)
 		if ttyErr == nil {
 			prog = tea.NewProgram(initialUIModel(serverCmdString), tea.WithInput(tty), tea.WithOutput(tty))
+		} else {
+			appLogger.Printf("Failed to open keyboard TTY: %v\n", ttyErr)
 		}
 	} else {
 		appLogger.Println("[SYSTEM] Running in Headless Mode. Interactive TUI disabled.")
