@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec" // <-- Added missing import
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -24,19 +25,16 @@ var (
 const currentVersion = "v1.0.1"
 
 func checkUpdateAsync() {
-	// 1. Run silently in the background
 	go func() {
 		home, _ := os.UserHomeDir()
 		cacheFile := filepath.Join(home, ".mcp-proxy", "last_update_check")
 
-		// 2. Only check once every 24 hours
 		if info, err := os.Stat(cacheFile); err == nil {
 			if time.Since(info.ModTime()) < 24*time.Hour {
 				return
 			}
 		}
 
-		// 3. Ping GitHub Releases API
 		resp, err := http.Get("https://api.github.com/repos/TheAICompanyLabs/mcp-proxy-open-source/releases/latest")
 		if err != nil || resp.StatusCode != 200 {
 			return
@@ -47,11 +45,9 @@ func checkUpdateAsync() {
 			TagName string `json:"tag_name"`
 		}
 		if err := json.NewDecoder(resp.Body).Decode(&release); err == nil {
-			// 4. Update the cache file timestamp
 			os.MkdirAll(filepath.Dir(cacheFile), 0755)
 			os.WriteFile(cacheFile, []byte(release.TagName), 0644)
 
-			// 5. Notify if the version is newer
 			if release.TagName != currentVersion && release.TagName != "" {
 				fmt.Printf("\n\033[33m🚀 A new version of Universal MCP Proxy is available! (%s -> %s)\033[0m\n", currentVersion, release.TagName)
 				fmt.Println("\033[33mRun your installation script to update.\033[0m")
@@ -99,12 +95,10 @@ func handleLogin() {
 }
 
 func resolveLicenseKey() string {
-	// 1. Check environment variable (highest priority for CI/CD & automation)
 	if envKey := strings.TrimSpace(os.Getenv("MCP_LICENSE_KEY")); envKey != "" {
 		return envKey
 	}
 
-	// 2. Check local saved configuration
 	cfg, err := LoadConfig()
 	if err != nil {
 		log.Printf("⚠️ Warning: Could not read config file: %v", err)
@@ -115,14 +109,21 @@ func resolveLicenseKey() string {
 	return ""
 }
 
+// Helper to safely execute node/batch scripts on Windows
+func execCommandHelper(name string, arg ...string) *exec.Cmd {
+	if runtime.GOOS == "windows" {
+		winArgs := append([]string{"/c", name}, arg...)
+		return exec.Command("cmd", winArgs...)
+	}
+	return exec.Command(name, arg...)
+}
+
 func main() {
-	// 1. Check if user is invoking the login subcommand
 	if len(os.Args) > 1 && os.Args[1] == "login" {
 		handleLogin()
 		return
 	}
 
-	// 2. Resolve the active license key (Free vs. Enterprise)
 	licenseKey := resolveLicenseKey()
 
 	if licenseKey == "" {
@@ -144,14 +145,12 @@ func main() {
 		}
 	}
 
-	// 3. Verify target MCP server command is passed
 	if len(os.Args) < 2 {
 		fmt.Println("\nError: No target MCP server command provided.")
 		fmt.Println("Usage: go run . <your_server_command>")
 		os.Exit(1)
 	}
 
-	// 4. Initialize arguments and package-scoped logger
 	args := os.Args[1:]
 	serverCmdString := strings.Join(args, " ")
 
@@ -161,32 +160,25 @@ func main() {
 	}
 	defer logFile.Close()
 
-	// Assign to the package-level appLogger variable
 	appLogger = log.New(logFile, "[MCP-PROXY] ", log.LstdFlags)
 	loadPolicy("policy.yaml", appLogger)
 	InitLicense(appLogger)
 	pendingDecisionChan = make(chan bool)
 
-	// 1. Detect if the process is running headless
 	fileInfo, _ := os.Stdout.Stat()
 	isHeadless := (fileInfo.Mode() & os.ModeCharDevice) == 0
 
 	var prog *tea.Program
-	var tty *os.File
+	var ttyIn, ttyOut *os.File
+	var ttyErr error
 
-	// 2. Only boot the Terminal UI if a TTY is attached
 	if !isHeadless {
-		var ttyIn, ttyOut *os.File
-		var ttyErr error
-
 		if runtime.GOOS == "windows" {
-			// Windows strictly separates input (CONIN$) and output (CONOUT$) streams
 			ttyIn, ttyErr = os.OpenFile("CONIN$", os.O_RDONLY, 0)
 			if ttyErr == nil {
 				ttyOut, ttyErr = os.OpenFile("CONOUT$", os.O_WRONLY, 0)
 			}
 		} else {
-			// macOS/Linux use a single bidirectional TTY
 			ttyIn, ttyErr = os.OpenFile("/dev/tty", os.O_RDWR, 0)
 			ttyOut = ttyIn
 		}
@@ -200,23 +192,22 @@ func main() {
 		appLogger.Println("[SYSTEM] Running in Headless Mode. Interactive TUI disabled.")
 	}
 
-	// 3. Pass the `isHeadless` flag into the pipeline
 	cmd, err := StartProxyPipeline(args, prog, appLogger, isHeadless)
 	if err != nil {
 		appLogger.Fatalf("Pipeline startup failed: %v", err)
 	}
 
-	// 4. Handle Execution Halting
 	if prog != nil {
-		// If TUI is active, run it. It blocks until the user quits.
 		if _, err := prog.Run(); err != nil {
 			appLogger.Printf("TUI runtime error: %v", err)
 		}
-		if tty != nil {
-			tty.Close()
+		if ttyIn != nil {
+			ttyIn.Close()
+		}
+		if ttyOut != nil && ttyOut != ttyIn {
+			ttyOut.Close()
 		}
 	} else {
-		// If Headless, block on the underlying server process
 		cmd.Wait()
 	}
 }

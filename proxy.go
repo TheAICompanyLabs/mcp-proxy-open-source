@@ -9,12 +9,10 @@ import (
 	"os"
 	"os/exec"
 	"sync"
-
 	"time"
 
-	"github.com/ncruces/zenity"
-
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/ncruces/zenity"
 )
 
 type logMsg string
@@ -61,7 +59,8 @@ func checkRateLimit() bool {
 
 // UPDATE the signature to include `isHeadless bool`
 func StartProxyPipeline(cmdArgs []string, prog *tea.Program, logger *log.Logger, isHeadless bool) (*exec.Cmd, error) {
-	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
+	// FIX APPLIED HERE: Using the cross-platform helper defined in main.go
+	cmd := execCommandHelper(cmdArgs[0], cmdArgs[1:]...)
 	cmd.Stderr = logger.Writer()
 
 	serverStdin, err := cmd.StdinPipe()
@@ -141,7 +140,6 @@ func handleInboundTraffic(serverStdin io.Writer, prog *tea.Program, logger *log.
 									prog.Send(logMsg(fmt.Sprintf("BLOCKED: %s", toolName)))
 								}
 								continue
-								// SYNTAX FIX: Removed the extra closing brace here
 							} else if result.Action == "REQUIRE_APPROVAL" {
 								if !isHeadless && prog != nil {
 									// 1. TUI MODE: Route to Bubble Tea
@@ -185,7 +183,7 @@ func handleInboundTraffic(serverStdin io.Writer, prog *tea.Program, logger *log.
 		}
 
 		fmt.Fprintln(serverStdin, rawLine)
-	} // SYNTAX FIX: Realigned this brace to properly close the for loop
+	}
 
 	if err := scanner.Err(); err != nil {
 		logger.Printf("Inbound stream closed with error: %v\n", err)
