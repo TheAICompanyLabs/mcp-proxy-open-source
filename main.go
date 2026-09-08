@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec" // <-- Added missing import
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -154,14 +154,30 @@ func main() {
 	args := os.Args[1:]
 	serverCmdString := strings.Join(args, " ")
 
-	logFile, err := os.OpenFile("mcp_audit.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	// --- PATH FIX: Resolve home directory to bypass Claude's Read-Only Sandbox ---
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatalf("Failed to get home directory: %v", err)
+	}
+
+	proxyDir := filepath.Join(homeDir, ".mcp-proxy")
+	if err := os.MkdirAll(proxyDir, 0755); err != nil {
+		log.Fatalf("Failed to create proxy config directory: %v", err)
+	}
+
+	logPath := filepath.Join(proxyDir, "mcp_audit.log")
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalf("Failed to open log file: %v", err)
 	}
 	defer logFile.Close()
 
 	appLogger = log.New(logFile, "[MCP-PROXY] ", log.LstdFlags)
-	loadPolicy("policy.yaml", appLogger)
+
+	policyPath := filepath.Join(proxyDir, "policy.yaml")
+	loadPolicy(policyPath, appLogger)
+	// ----------------------------------------------------------------------------
+
 	InitLicense(appLogger)
 	pendingDecisionChan = make(chan bool)
 
