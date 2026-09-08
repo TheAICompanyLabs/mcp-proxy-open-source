@@ -65,12 +65,12 @@ The Circuit Breaker will instantly mutate your `~/.mcp-proxy/policy.yaml` to per
 
 Terminal Circuit Breaker ships with drop-in, zero-trust policy templates designed for common attack vectors. Browse our audited recipes:
 
-* 📁 **Filesystem & OS Sandbox:** Blocks path traversal (`../../`), secret theft (`.env`, `id_rsa`), and destructive terminal commands (`rm -rf`, `sudo`).
-* 🗄️ **Database Guardrails:** Prevents destructive SQL (`DROP`, `TRUNCATE`), unindexed mass updates, and semicolon-chained injections.
-* 🌐 **Web & SSRF Protection:** Hard-blocks cloud metadata IP exfiltration (`169.254.169.254`), private RFC 1918 subnets, and browser cookie dumps.
-* 🐙 **Git & Source Code Guard:** Halts `--force` pushes, blocks pushes to `main`/`master`, and forbids automated repository deletion.
-* ☁️ **Cloud & DevOps Firewall:** Intercepts privileged Docker containers (`--privileged`, `-v /:`), expensive compute instances, and `terraform destroy`.
-* 💬 **Productivity & Comms:** Prevents accidental Slack broadcasts to `#general`/`@everyone` and blocks destructive calendar or Drive purging.
+* 📁 [**Filesystem & OS Sandbox:**](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/cookbook/filesystem-and-os/policy.yaml) Blocks path traversal (`../../`), secret theft (`.env`, `id_rsa`), and destructive terminal commands (`rm -rf`, `sudo`).
+* 🗄️ [**Database Guardrails:**](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/cookbook/database-and-data/policy.yaml) Prevents destructive SQL (`DROP`, `TRUNCATE`), unindexed mass updates, and semicolon-chained injections.
+* 🌐 [**Web & SSRF Protection:**](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/cookbook/web-and-ssrf/policy.yaml) Hard-blocks cloud metadata IP exfiltration (`169.254.169.254`), private RFC 1918 subnets, and browser cookie dumps.
+* 🐙 [**Git & Source Code Guard:**](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/cookbook/git-and-code/policy.yaml) Halts `--force` pushes, blocks pushes to `main`/`master`, and forbids automated repository deletion.
+* ☁️ [**Cloud & DevOps Firewall:**](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/cookbook/cloud-and-devops/policy.yaml) Intercepts privileged Docker containers (`--privileged`, `-v /:`), expensive compute instances, and `terraform destroy`.
+* 💬 [**Productivity & Comms:**](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/cookbook/cloud-and-devops/policy.yaml) Prevents accidental Slack broadcasts to `#general`/`@everyone` and blocks destructive calendar or Drive purging.
 
 > 💡 **Need a universal starting point?** Copy our [Root Unified Policy](cookbook/policy.yaml) (`cookbook/policy.yaml`) directly to `~/.mcp-proxy/policy.yaml` for instant baseline coverage.
 
