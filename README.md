@@ -1,172 +1,91 @@
 # ⚡ Terminal Circuit Breaker (for MCP)
 
-> **A zero-latency, air-gapped circuit breaker for local AI agents.**
+> **A zero-latency, air-gapped consequence firewall for local AI agents.**
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat-square&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey?style=flat-square)](#)
 
 <p align="center">
-  <!-- Replace this with the sleek, minimalist banner image discussed -->
-  <img src="./assets/hero-banner.png" alt="MCP Sentinel Architecture" width="800">
+  <img src="./assets/hero-banner.png" alt="Terminal Circuit Breaker Architecture" width="850">
 </p>
 
-Local AI agents executing arbitrary tool commands is a critical security vulnerability. Running a standard MCP server gives language models unchecked access to your filesystem, databases, and internal APIs.
+The Model Context Protocol (MCP) standardized how AI communicates with local tools. But in doing so, it inadvertently created a massive autonomous attack surface. Standard MCP proxies and enterprise gateways (like Pomerium or Entra ID) only verify *who* the user is. If an authorized agent is compromised via prompt injection, those gateways will blindly forward a destructive payload like `rm -rf /` or `DROP TABLE`.
 
-**MCP Sentinel** sits exactly in the middle. It intercepts JSON-RPC payloads via standard input/output (`stdio`) in microseconds, enforcing strict, human-readable YAML policies before any command executes.
+**Terminal Circuit Breaker** solves the "Authorized Agent" blind spot. It intercepts raw JSON-RPC payloads in memory in ~15µs, evaluates the arguments against strict YAML policies, and halts dangerous executions natively in your terminal.
 
 ---
 
-### ⚡ Core Architecture & Capabilities
+## ✨ Why This Wins (The UX Moat)
 
-* **Runtime Guardrails:** Parses JSON-RPC payloads in real-time, verifying arguments against your defined rules.
-* **Universal Protection:** Natively blocks SSRF (Server-Side Request Forgery), directory traversal (`../../`), and known prompt injection signatures.
-* **Fail-Closed Security:** If a policy is malformed or missing, the proxy defaults to zero-trust, completely isolating the underlying server.
-* **True Air-Gapped Execution:** 100% of the Open Core security engine runs locally. Zero outbound telemetry or network calls.
+Developers abandon security tooling that breaks flow state. You shouldn't have to switch to a web browser to approve a local file read.
+
+* **Terminal-Native Circuit Breaker:** Suspends execution immediately via a high-contrast Bubble Tea UI. Press `Y` to allow, or `N` to deny, directly in your active terminal.
+* **Microsecond Interception:** Layer 1 & 2 regex and DLP rules evaluate payloads in ~15µs before they reach the target server.
+* **True Air-Gapped Open Core:** 100% of the security engine runs locally. Source code and local file data never leave your workstation.
+* **Auto-Scaffolding:** Dynamically generates default `REQUIRE_APPROVAL` policies the first time an unknown tool is invoked.
 
 ---
 
-### 🎥 See it in Action
-<p align="center">
-  <!-- Insert the 10-second Terminal GIF here -->
-  <img src="./assets/demo.gif" alt="MCP Sentinel Demo" width="700">
-</p>
+## 🚀 One-Line Installation
 
-
-## 🚀 Installation
+You don't need to be a cybersecurity expert to secure your local environment.
 
 **macOS & Linux**
 ```bash
 curl -sSfL https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-source/main/scripts/install.sh | bash
 ```
 
-
 **Windows (PowerShell)**
 ```powershell
 irm https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-source/main/scripts/install.ps1 | iex
 ```
 
-### 🔄 The Zero-Friction Workflow (Dry-Run to Production in 60 Seconds):
+---
 
-We built MCP Proxy so you can immediately secure your local environment without learning a complex new framework. The "Aha!" moment and customization happen in parallel.
-	
-  1.	The Instant Block: Prefix your server with mcp-proxy. The proxy will auto-generate a default policy.yaml and instantly block destructive commands out-of-the-box.
-	
-  2.	The Quick Customization: Open our Cookbook (below), copy the snippet for your specific database or OS, and paste it into your policy.yaml.
-	
-  3.	The Secure Execution: Your AI now has frictionless read-access, while high-risk mutations are securely trapped in the TUI for your explicit [Y/N] approval.
+## 🛠️ Zero-Prompt Autonomous Configuration
 
-Syntax:
-```
-mcp-proxy <your-standard-mcp-server-startup-command>
-```
+Achieve a secure, hands-off agent workflow in under 60 seconds.
 
-### Examples: 
-
-### 1. Securing a local SQLite database server
-```
-mcp-proxy uvx mcp-server-sqlite --db-path ./local.db
-```
-### 2. Securing a filesystem server
-```
-mcp-proxy npx -y @modelcontextprotocol/server-filesystem /path/to/safe/dir
-```
-### 3. Securing a custom Python server
-```
-mcp-proxy python3 main.py
-```
- 
-### 4. Interactive Demo: Securing the Filesystem Server
-#### Step 1: Install the Proxy
-Bash 
-```
-curl -sSfL https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-source/main/scripts/install.sh | bash
-```
-
-#### 2. Connect your AI Client
+### 1. Connect your AI Client
 
 Terminal Circuit Breaker works universally across the MCP ecosystem. Click below for exact setup instructions for your preferred AI client:
-Read the [Integration Guide for Cursor, Claude, Windsurf, Cline, and LM Studio](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/docs/integration.md)
 
+👉 [**Integration Guide: Cursor, Claude, Windsurf, Cline, and LM Studio**](./docs/integrations.md)
 
+### 2. Auto-Tune your Policies
 
-#### Step 3: Trigger the Auto-Generation
-Restart Claude Desktop. The proxy will automatically intercept the connection and generate a strict, default policy.yaml in the directory where Claude executed the command.
+When your AI client invokes a tool for the first time, a native OS popup or terminal UI will intercept it. Click **Always Allow**.
 
-#### Step 4: Execute the Test Attack
-Open a chat in Claude and type: "Can you read the contents of ../../etc/passwd?"
+The Circuit Breaker will instantly mutate your `~/.mcp-proxy/policy.yaml` to permanently whitelist that specific tool for autonomous execution, while keeping dangerous paths (like `/etc/passwd`) strictly blocked.
 
-#### Step 5: Witness the Block
-Claude will pause. Switch to your terminal. You will instantly see the Universal MCP Proxy TUI intercepting the zero-day payload:
+---
 
-╭──────────────────────────────────────────────────────────╮                         
- ⚠️  INTERCEPTED ACTION: read_file                        
-                                                          
- Payload: {"path": "../../etc/passwd"}                                     
- Policy: Directory traversal protection active                                        
-                                                                    
- [a] Allow Once   [d] Deny   [s] Save Rule & Always Allow 
-╰──────────────────────────────────────────────────────────╯          
-Press [d] to deny. Claude will gracefully respond that it is not permitted to access that file. You have just secured your AI agent in under 60 seconds.
+## 🛡️ Pre-Configured Policy Cookbook
 
-## 📖 The Policy Cookbook
-Security configurations should live alongside your code. We provide "Gold Standard" templates for the 6 most critical MCP threat vectors. Developers can immediately copy, modify, and dry-run these policies during testing.
-👉 View the complete Policy Cookbook [here](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/tree/260c26af853b7cc9c80c52fbcff69295d2db0a7f/cookbook)
-1. Git & Code Management
-⚬	Target Servers: @modelcontextprotocol/server-github, git-mcp
-⚬	Threats Neutralized: Code exfiltration, destructive force-pushes (--force), repository deletion.
-⚬	Default Stance: Allows read-only exploration of repositories; requires human approval for commits; completely blocks pushes to main.
-2. File System & OS Execution
-⚬	Target Servers: @modelcontextprotocol/server-filesystem, bash-mcp, os-mcp
-⚬	Threats Neutralized: Arbitrary Remote Code Execution (RCE), directory traversal (../../.ssh), and disk wiping (rm -rf /).
-⚬	Default Stance: Sandboxes the agent strictly to a specified project folder and drops payloads containing known executable file extensions (.sh, .exe).
-3. Databases & Data Warehousing
-⚬	Target Servers: @modelcontextprotocol/server-postgres, mysql-mcp
-⚬	Threats Neutralized: Catastrophic data loss (DROP, TRUNCATE), unauthorized schema alterations.
-⚬	Default Stance: Frictionless SELECT queries allowed automatically; requires explicit TUI approval for UPDATE/INSERT commands.
-4. Cloud & DevOps Infrastructure
-⚬	Target Servers: aws-mcp, docker_mcp, kubernetes-mcp
-⚬	Threats Neutralized: Cryptojacking (unauthorized root containers), wiping IAM roles, deleting production clusters.
-⚬	Default Stance: Read-only observability for logs is allowed; destroying resources or mounting root volumes is completely blocked.
-5. Web Scraping & SSRF Protection
-⚬	Target Servers: @modelcontextprotocol/server-fetch, puppeteer-mcp
-⚬	Threats Neutralized: Server-Side Request Forgery (SSRF) hitting cloud metadata (169.254.169.254), internal loopback scanning (localhost).
-⚬	Default Stance: Forces HTTPS-only connections and automatically drops requests aimed at internal, private subnet IP ranges.
-6. Productivity & Internal Communications
-⚬	Target Servers: slack-mcp, gmail-mcp, google-drive-mcp
-⚬	Threats Neutralized: Hallucinated external emails, unauthorized messages in public Slack channels.
-⚬	Default Stance: Restricts messaging to designated internal domains or #testing channels.
+Terminal Circuit Breaker ships with drop-in, zero-trust policy templates designed for common attack vectors. Browse our audited recipes:
 
-## ⚠️ Troubleshooting OS Warnings
-Because this is a newly compiled security binary, your operating system may flag it initially.
+* 📁 **Filesystem & OS Sandbox:** Blocks path traversal (`../../`), secret theft (`.env`, `id_rsa`), and destructive terminal commands (`rm -rf`, `sudo`).
+* 🗄️ **Database Guardrails:** Prevents destructive SQL (`DROP`, `TRUNCATE`), unindexed mass updates, and semicolon-chained injections.
+* 🌐 **Web & SSRF Protection:** Hard-blocks cloud metadata IP exfiltration (`169.254.169.254`), private RFC 1918 subnets, and browser cookie dumps.
+* 🐙 **Git & Source Code Guard:** Halts `--force` pushes, blocks pushes to `main`/`master`, and forbids automated repository deletion.
+* ☁️ **Cloud & DevOps Firewall:** Intercepts privileged Docker containers (`--privileged`, `-v /:`), expensive compute instances, and `terraform destroy`.
+* 💬 **Productivity & Comms:** Prevents accidental Slack broadcasts to `#general`/`@everyone` and blocks destructive calendar or Drive purging.
 
-1. macOS "Unidentified Developer" Error:
+> 💡 **Need a universal starting point?** Copy our [Root Unified Policy](cookbook/policy.yaml) (`cookbook/policy.yaml`) directly to `~/.mcp-proxy/policy.yaml` for instant baseline coverage.
 
-macOS Gatekeeper may block the binary from running. To explicitly trust the proxy, run:
+---
 
-```
-sudo xattr -d com.apple.quarantine /usr/local/bin/mcp-proxy
-```
+## 🏢 Coming Soon: Enterprise Control Plane
 
-2. Windows SmartScreen Warning:
+Managing local `.yaml` files across hundreds of developers does not scale. Our upcoming centralized Next.js control plane (**MCP Sentinel**) allows security teams to:
 
-If Windows Defender prompts "Windows protected your PC", click More info -> Run anyway. Alternatively, unblock the downloaded .exe via PowerShell:
-```
-Unblock-File -Path "C:\mcp-proxy\mcp-proxy.exe"
-```
+* Push updated `policy.yaml` rules fleet-wide.
+* Aggregate centralized audit logs across thousands of developer laptops.
+* Enforce cryptographic, tamper-evident log chains.
 
+---
 
-## 🏢 Enterprise Tier: The Audit Log Moat
+## 📄 License
 
-Sharing a policy.yaml file across a team is trivial. But for regulated enterprises, the challenge isn't policy distribution—it's compliance and traceability.
-Native MCP built-in logs are merely ephemeral session logs stored in-memory or temp files. Once a session ends, the logs are permanently lost, providing zero end-to-end traceability. Furthermore, native logs fail to capture high-level security events like blocked policy violations or unauthorized access attempts.
-Universal MCP Proxy solves this by acting as a centralized broker for all MCP traffic.
-Our upcoming Enterprise Gateway pushes beyond the gold standard by providing:
-
-⚬	Cryptographic Tamper-Evident Logs: Blockchain-style hash-chaining for log records so any alteration can be mathematically detected.
-
-⚬	Comprehensive Security Event Tracking: Granular logging of policy enforcements, blocked directory traversals, and prompt sanitizations.
-
-⚬	SIEM Integration Ready: Seamlessly route these immutable logs into Datadog, Splunk, or OpenSearch to meet SOC 2, HIPAA, and ISO 27001 audit requirements.
-
-Visit TheAICompanyLabs to secure your production AI infrastructure.
+Licensed under the [Apache 2.0 License](LICENSE).
