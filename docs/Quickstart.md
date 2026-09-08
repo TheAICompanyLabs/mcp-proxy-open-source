@@ -46,7 +46,7 @@ You must route your AI client's MCP traffic through the proxy. We support all ma
 2. Set the `command` to `mcp-proxy`.
 3. Pass your actual server command (like `npx` or `python`) into the `args` array.
 
-👉 [View exact configuration file paths for Claude, Cursor, Windsurf, Cline, and LM Studio here](./integrations.md).
+👉 [View exact configuration file paths for Claude, Cursor, Windsurf, Cline, and LM Studio here](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/docs/integration.md).
 
 **CRITICAL:** Fully quit and restart your AI client after saving the configuration file.
 
@@ -66,4 +66,4 @@ Send a follow-up prompt to your AI client (e.g., "Now read the contents of the R
 
 Because the agent is operating within the bounds of your newly generated policy, the request will complete end-to-end with zero popups or terminal interruptions. Your agent is now secure and autonomous.
 
-**Next Steps:** Ready to lock down databases, cloud infrastructure, and git repositories? Explore our [Policy Cookbook](../cookbook/README.md).
+**Next Steps:** Ready to lock down databases, cloud infrastructure, and git repositories? Explore our [Policy Cookbook](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/cookbook/README.md).
