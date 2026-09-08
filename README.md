@@ -51,7 +51,7 @@ Achieve a secure, hands-off agent workflow in under 60 seconds.
 
 Terminal Circuit Breaker works universally across the MCP ecosystem. Click below for exact setup instructions for your preferred AI client:
 
-👉 [**Integration Guide: Cursor, Claude, Windsurf, Cline, and LM Studio**](./docs/integrations.md)
+👉 [**Integration Guide: Cursor, Claude, Windsurf, Cline, and LM Studio**](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/docs/integration.md)
 
 ### 2. Auto-Tune your Policies
 
