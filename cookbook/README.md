@@ -1,109 +1,102 @@
 # 📖 The Policy Cookbook
 
-> **Secure, copy-paste guardrails for your Terminal Circuit Breaker.**
+> **Production-grade, copy-paste guardrails for your Terminal Circuit Breaker.**
 
-The Terminal Circuit Breaker protects your machine by enforcing strict, human-readable YAML policies before any Model Context Protocol (MCP) tool executes. 
+The Terminal Circuit Breaker protects your environment by evaluating every Model Context Protocol (MCP) JSON-RPC payload against strict, human-readable YAML policies before any execution occurs.
 
-This cookbook provides production-ready recipes for the most common attack vectors and MCP servers. 
-
----
-
-## 🧭 How to Use This Cookbook
-
-1. **Find your use case:** Browse the recipes below based on the MCP server you are running.
-2. **Copy the YAML:** Copy the configuration block.
-3. **Paste & Reload:** Paste it into your `~/.mcp-proxy/policy.yaml` file. The Circuit Breaker hot-reloads instantly.
+This cookbook contains audited, modular policy suites categorized by domain and threat profile.
 
 ---
 
-## 📁 Recipe 1: The Local Filesystem Sandbox
+## ⚡ Quickstart: The Universal Baseline
 
-**Target Server:** `@modelcontextprotocol/server-filesystem`
+If you just want an immediate, multi-domain starter pack covering the top 6 attack vectors in one file, use our root starter template:
 
-**Tags:** `[Beginner]` `[High-Utility]`
+👉 **[View Root Unified Baseline (`./policy.yaml`)](./policy.yaml)**
 
-### 🛑 The Problem: Path Traversal
-
-If you allow an agent to read files, a hallucination or prompt injection can trick it into reading sensitive SSH keys or environment variables outside your project folder.
-
-### ✅ The Solution: Strict Scoping & Read-Only Fallbacks
-
-This policy restricts all file reads strictly to your designated workspace and explicitly blocks dangerous payload paths.
-
-```yaml
-policies:
-  read_file:
-    action: ALLOW
-    message: "Permitted read access within project bounds"
-    validation:
-      # Block directory traversal and sensitive OS directories
-      reject_patterns:
-        - "(?i)(\\.\\./)"
-        - "^/etc/.*"
-        - "^~/.ssh/.*"
-        - "^.*\\.env$"
-  
-  write_file:
-    action: REQUIRE_APPROVAL
-    message: "Filesystem mutations always require human approval"
+```bash
+# Copy the unified baseline into your active proxy directory
+cp cookbook/policy.yaml ~/.mcp-proxy/policy.yaml
 ```
 
-## 🗄️ Recipe 2: PostgreSQL Guardrails
+---
 
-**Target Server:** postgres-mcp-server
+## 🗂️ Domain-Specific Policy Recipes
 
-**Tags:** [Advanced] [High-Risk]
+Each folder contains a targeted `policy.yaml` fine-tuned for specific MCP servers, threat vectors, and risk profiles.
 
-### 🛑 The Problem: Catastrophic Data Loss
+| Domain Recipe | Target Servers | Threat Vectors Neutralized | Risk Tier |
+|---|---|---|---|
+| 1. Filesystem & OS | `@modelcontextprotocol/server-filesystem`, `bash-mcp`, `os-mcp` | Directory traversal (`../../`), credential harvesting (`.env`, `id_rsa`), arbitrary shell execution, and disk wipes. | **CRITICAL** |
+| 2. Database & Data | `@modelcontextprotocol/server-postgres`, `server-sqlite`, `mysql-mcp` | Unchecked `DROP TABLE`, unindexed mass `DELETE`/`UPDATE` without `WHERE` clauses, and SQL injection chaining via `;`. | **CRITICAL** |
+| 3. Web & SSRF | `@modelcontextprotocol/server-fetch`, `server-puppeteer`, `playwright-mcp` | Cloud metadata exfiltration (`169.254.169.254`), private subnet port scanning, and browser token extraction (`document.cookie`). | **HIGH** |
+| 4. Git & Code | `@modelcontextprotocol/server-github`, `git-mcp`, `gitlab-mcp` | Force-pushes (`--force`), pushing directly to `main`/`master`, unauthorized repo deletions, and autonomous self-merging. | **HIGH** |
+| 5. Cloud & DevOps | `docker_mcp`, `kubernetes-mcp`, `aws-mcp`, `terraform-mcp` | Privileged container creation (`--privileged`), root volume mounting (`-v /:`), crypto-mining instance sizing, and `terraform destroy`. | **CRITICAL** |
+| 6. Productivity & Comms | `slack-mcp`, `gmail-mcp`, `google-drive-mcp`, `notion-mcp`, `cal-mcp` | Unauthorized `#all-hands` or `@everyone` Slack blasts, competitor/investor email leaks, and mass deletion of Drive or Notion tables. | **MEDIUM** |
 
-When connecting an LLM to a database, you want it to query data, not delete it. Standard MCP implementations cannot differentiate between a SELECT query and a DROP TABLE command inside a raw execution tool.
+---
 
-### ✅ The Solution: Destructive SQL Interception
+## 🛠️ Deep Dive: Recipe Breakdown
 
-This policy allows standard schema exploration, but uses Layer 1 Argument Sanitization to intercept destructive SQL commands such as DELETE, DROP, and TRUNCATE before they reach your database.
+### 1. Filesystem & OS Guardrails
+**Target Servers:** `@modelcontextprotocol/server-filesystem`, `bash-mcp`, `os-mcp`
+**Default Posture:** `deny`
 
-```yaml
-policies:
-  execute_query:
-    action: ALLOW
-    validation:
-      # Intercept and block destructive SQL operations
-      reject_patterns:
-        - "(?i)\\b(DROP|TRUNCATE|DELETE|ALTER|GRANT|REVOKE)\\b"
-  
-  list_tables:
-    action: ALLOW
-    message: "Schema exploration is safe"
-```
+**Key Controls:**
+- **ALLOW:** Read-only queries scoped strictly inside `/opt/safe_workspace/*`.
+- **BLOCK:** Auto-rejects any path containing `../`, `.env`, `.aws`, `.ssh`, `/etc/shadow`, `/etc/passwd`, or `id_rsa`.
+- **REQUIRE_APPROVAL:** File creation stripped of executable permissions (`.sh`, `.exe`, `.bat`, `.ps1`).
+- **INTERCEPT:** Blocks `curl`, `wget`, `nc`, `rm -rf`, `sudo`, and `chmod` in bash tools.
 
-## 🌐 Recipe 3: Cloud SSRF Protection
+### 2. Database & Data Guardrails
+**Target Servers:** `@modelcontextprotocol/server-postgres`, `server-sqlite`, `mysql-mcp`
+**Default Posture:** `deny`
 
-**Target Server:** @modelcontextprotocol/server-fetch
+**Key Controls:**
+- **ALLOW:** Schema inspection (`list_tables`, `describe_schema`) and pure read operations matching `^(SELECT|EXPLAIN)`.
+- **BLOCK:** Chained SQL injections attempting to append `; DROP`, `; DELETE`, or `; ALTER`.
+- **REQUIRE_APPROVAL:** Single data mutations; hard-blocks unconstrained queries (e.g., `DELETE FROM users;` without a `WHERE` clause).
 
-**Tags:** [Intermediate] [Security-Critical]
+### 3. Web & SSRF Guardrails
+**Target Servers:** `@modelcontextprotocol/server-fetch`, `server-puppeteer`, `playwright-mcp`, `firecrawl-mcp`
+**Default Posture:** `deny`
 
-#### 🛑 The Problem: Server-Side Request Forgery (SSRF)
+**Key Controls:**
+- **ALLOW:** Web fetches matching `^https://.*`.
+- **BLOCK:** Cloud metadata endpoints (`169.254.169.254`, `metadata.google.internal`), loopback addresses (`127.0.0.1`, `localhost`), and RFC 1918 internal subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`).
+- **REQUIRE_APPROVAL:** In-browser JavaScript execution attempts (`evaluate`), blocking access to `document.cookie` or `localStorage`.
 
-Agents equipped with fetch tools can be manipulated into pinging internal cloud metadata endpoints (like AWS 169.254.169.254) to exfiltrate temporary IAM credentials.
+### 4. Git & Code Guardrails
+**Target Servers:** `@modelcontextprotocol/server-github`, `git-mcp`, `gitlab-mcp`
+**Default Posture:** `deny`
 
-### ✅ The Solution: Internal IP Blacklisting
+**Key Controls:**
+- **ALLOW:** Read-only inspect tools (`git_status`, `git_diff`, `github_search_repositories`) and pull request creation.
+- **REQUIRE_APPROVAL:** Commit and push operations.
+- **HARD DENY:** Pushes containing `main`, `master`, `prod`, or `--force`/`-f`. AI tools cannot merge PRs or delete repositories.
 
-Block the agent from resolving any private, link-local, or loopback IP ranges.
+### 5. Cloud & DevOps Guardrails
+**Target Servers:** `docker_mcp`, `kubernetes-mcp`, `aws-mcp`, `terraform-mcp`
+**Default Posture:** `deny`
 
+**Key Controls:**
+- **ALLOW:** Observability commands (`list_containers`, `kubectl_get`, `terraform_plan`).
+- **REQUIRE_APPROVAL:** Container launches, blocking `--privileged`, root mounts (`-v /:`), and expensive compute tiers (`p3.8xlarge`).
+- **HARD DENY:** Destructive calls (`aws_delete_*`, `kubectl_delete`, `terraform_destroy`, `remove_volume`).
 
-```yaml
-policies:
-  fetch_url:
-    action: ALLOW
-    validation:
-      reject_patterns:
-        - "169\\.254\\.169\\.254"
-        - "^https?://(10\\.|192\\.168\\.|172\\.(1[6-9]|2[0-9]|3[0-1])\\.)"
-        - "^https?://(localhost|127\\.0\\.0\\.1)"
-```
+### 6. Productivity & Comms Guardrails
+**Target Servers:** `slack-mcp`, `gmail-mcp`, `google-drive-mcp`, `notion-mcp`, `cal-mcp`
+**Default Posture:** `deny`
 
-## 🏢 Enterprise Tier: MCP Sentinel
+**Key Controls:**
+- **ALLOW:** Context retrieval (`slack_get_channel_history`, `drive_search_files`, `cal_get_events`).
+- **REQUIRE_APPROVAL:** Outbound messages. Auto-blocks posts directed at `#general`, `#all-hands`, `@channel`, or `@everyone`.
+- **HARD DENY:** Irreversible data destruction (`drive_delete_file`, `gmail_delete_message`, `notion_delete_database`).
 
-Are you managing a fleet of developers? Managing local .yaml files across hundreds of laptops does not scale.
+---
 
-MCP Sentinel (Phase 2) is our upcoming centralized control plane. It allows security teams to author these exact cookbook recipes in a centralized dashboard and sync them fleet-wide in real time. Learn more about Enterprise here.
+## 🏢 Fleet-Wide Sync: MCP Sentinel (Enterprise)
+
+Running independent `policy.yaml` files across an engineering team leads to config drift.
+
+**MCP Sentinel** is our centralized enterprise plane that lets security teams distribute, version, and cryptographically audit these exact policies across thousands of developer laptops.
