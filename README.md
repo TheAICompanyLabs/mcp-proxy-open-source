@@ -1,22 +1,37 @@
-# 🛡️ Universal MCP Proxy 
-**An open-source, zero-latency security firewall for the Model Context Protocol (MCP).**
+# ⚡ Terminal Circuit Breaker (for MCP)
 
-[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgray)](#installation)
+> **A zero-latency, air-gapped circuit breaker for local AI agents.**
 
-Local AI agents executing arbitrary tool commands is a critical security vulnerability. Running a standard MCP server gives language models unchecked access to your filesystem, databases, and internal APIs. 
+[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat-square&logo=go)](https://go.dev/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey?style=flat-square)](#)
 
-**MCP Proxy sits exactly in the middle.** It intercepts JSON-RPC payloads via standard input/output (stdio) in microseconds, enforcing strict, human-readable YAML policies before any command executes.
+<p align="center">
+  <!-- Replace this with the sleek, minimalist banner image discussed -->
+  <img src="./assets/hero-banner.png" alt="MCP Sentinel Architecture" width="800">
+</p>
 
-![MCP Proxy blocking a malicious command](./assets/video-mcp-proxy.gif)
+Local AI agents executing arbitrary tool commands is a critical security vulnerability. Running a standard MCP server gives language models unchecked access to your filesystem, databases, and internal APIs.
 
-## ⚡ Core Architecture & Capabilities
+**MCP Sentinel** sits exactly in the middle. It intercepts JSON-RPC payloads via standard input/output (`stdio`) in microseconds, enforcing strict, human-readable YAML policies before any command executes.
 
-*   **Runtime Guardrails:** Parses JSON-RPC payloads in real-time, verifying arguments against your defined rules.
-*   **Universal Protection:** Natively blocks SSRF (Server-Side Request Forgery), directory traversal (`../../`), and known prompt injection signatures.
-*   **Fail-Closed Security:** If a policy is malformed or missing, the proxy defaults to zero-trust, completely isolating the underlying server.
-*   **True Air-Gapped Execution:** 100% of the Open Core security engine runs locally. Zero outbound telemetry or network calls.
+---
+
+### ⚡ Core Architecture & Capabilities
+
+* **Runtime Guardrails:** Parses JSON-RPC payloads in real-time, verifying arguments against your defined rules.
+* **Universal Protection:** Natively blocks SSRF (Server-Side Request Forgery), directory traversal (`../../`), and known prompt injection signatures.
+* **Fail-Closed Security:** If a policy is malformed or missing, the proxy defaults to zero-trust, completely isolating the underlying server.
+* **True Air-Gapped Execution:** 100% of the Open Core security engine runs locally. Zero outbound telemetry or network calls.
+
+---
+
+### 🎥 See it in Action
+<p align="center">
+  <!-- Insert the 10-second Terminal GIF here -->
+  <img src="./assets/demo.gif" alt="MCP Sentinel Demo" width="700">
+</p>
+
 
 ## 🚀 Installation
 
