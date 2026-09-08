@@ -83,24 +83,12 @@ Bash
 curl -sSfL https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-source/main/scripts/install.sh | bash
 ```
 
-#### Step 2: Update Claude Desktop Configuration
-Instead of giving Claude raw access to your system, wrap the command in mcp-proxy. Open your claude_desktop_config.json and update the command array:
-JSON
-```
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "mcp-proxy",
-      "args": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/Users/Shared/DevWorkspace"
-      ]
-    }
-  }
-}
-```
+#### 2. Connect your AI Client
+
+Terminal Circuit Breaker works universally across the MCP ecosystem. Click below for exact setup instructions for your preferred AI client:
+Read the [Integration Guide for Cursor, Claude, Windsurf, Cline, and LM Studio](
+
+
 
 #### Step 3: Trigger the Auto-Generation
 Restart Claude Desktop. The proxy will automatically intercept the connection and generate a strict, default policy.yaml in the directory where Claude executed the command.
