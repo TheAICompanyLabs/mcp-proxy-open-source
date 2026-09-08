@@ -86,7 +86,7 @@ curl -sSfL https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-sou
 #### 2. Connect your AI Client
 
 Terminal Circuit Breaker works universally across the MCP ecosystem. Click below for exact setup instructions for your preferred AI client:
-Read the [Integration Guide for Cursor, Claude, Windsurf, Cline, and LM Studio](
+Read the [Integration Guide for Cursor, Claude, Windsurf, Cline, and LM Studio](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/docs/integration.md)
 
 
 
