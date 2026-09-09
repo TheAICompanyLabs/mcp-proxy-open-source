@@ -41,6 +41,7 @@ curl -sSfL https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-sou
 irm https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-source/main/scripts/install.ps1 | iex
 ```
 
+[Quick Installation Guide](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/blob/main/docs/Quickstart.md)
 ---
 
 ## 🛠️ Zero-Prompt Autonomous Configuration
