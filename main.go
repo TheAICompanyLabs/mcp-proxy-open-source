@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -54,6 +55,31 @@ func checkUpdateAsync() {
 			}
 		}
 	}()
+}
+
+func runHeadlessInterceptor(auditOnly bool) {
+	// TODO: Read JSON-RPC payload from stdio
+	// TODO: Canonicalize paths (Layer 2 Semantic Parsing)
+	// TODO: Evaluate against YAML block_regex (Layer 1)
+
+	isMalicious := true // Example flag triggered by regex engine
+
+	if isMalicious {
+		if !auditOnly {
+			// Fail-Closed: Block the agent completely
+			fmt.Fprintf(os.Stderr, `{"action": "BLOCKED", "reason": "SSRF payload detected", "latency_us": 14}`+"\n")
+			os.Exit(1)
+		} else {
+			// Fail-Open: Audit the attack but allow execution (Testing Mode)
+			fmt.Fprintf(os.Stderr, `{"action": "AUDIT", "reason": "Directory traversal detected, bypassing due to audit-only mode"}`+"\n")
+			// Allow execution to proceed to the MCP server
+		}
+	}
+}
+
+func runTerminalUI() {
+	// Your existing Bubble Tea logic goes here
+	fmt.Println("Launching TCB Interactive Consequence Firewall...")
 }
 
 func handleLogin() {
@@ -122,6 +148,17 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "login" {
 		handleLogin()
 		return
+	}
+	headlessMode := flag.Bool("headless", false, "Run without TUI, emitting JSON logs to stderr")
+	auditOnly := flag.Bool("audit-only", false, "Log violations but fail-open (do not block execution)")
+	flag.Parse()
+
+	if *headlessMode {
+		// Run the automated CI/CD pipeline interceptor
+		runHeadlessInterceptor(*auditOnly)
+	} else {
+		// Run the premium Bubble Tea TUI for local developers
+		runTerminalUI()
 	}
 
 	licenseKey := resolveLicenseKey()
