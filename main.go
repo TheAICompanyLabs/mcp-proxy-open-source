@@ -57,31 +57,6 @@ func checkUpdateAsync() {
 	}()
 }
 
-func runHeadlessInterceptor(auditOnly bool) {
-	// TODO: Read JSON-RPC payload from stdio
-	// TODO: Canonicalize paths (Layer 2 Semantic Parsing)
-	// TODO: Evaluate against YAML block_regex (Layer 1)
-
-	isMalicious := true // Example flag triggered by regex engine
-
-	if isMalicious {
-		if !auditOnly {
-			// Fail-Closed: Block the agent completely
-			fmt.Fprintf(os.Stderr, `{"action": "BLOCKED", "reason": "SSRF payload detected", "latency_us": 14}`+"\n")
-			os.Exit(1)
-		} else {
-			// Fail-Open: Audit the attack but allow execution (Testing Mode)
-			fmt.Fprintf(os.Stderr, `{"action": "AUDIT", "reason": "Directory traversal detected, bypassing due to audit-only mode"}`+"\n")
-			// Allow execution to proceed to the MCP server
-		}
-	}
-}
-
-func runTerminalUI() {
-	// Your existing Bubble Tea logic goes here
-	fmt.Println("Launching TCB Interactive Consequence Firewall...")
-}
-
 func handleLogin() {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter your MCP Proxy License Key: ")
@@ -149,20 +124,31 @@ func main() {
 		handleLogin()
 		return
 	}
+
+	checkUpdateAsync()
+
 	headlessMode := flag.Bool("headless", false, "Run without TUI, emitting JSON logs to stderr")
 	auditOnly := flag.Bool("audit-only", false, "Log violations but fail-open (do not block execution)")
+	runBenchmarkCmd := flag.Bool("benchmark", false, "Run the local Agent Execution Security Benchmark")
 	flag.Parse()
 
-	if *headlessMode {
-		// Run the automated CI/CD pipeline interceptor
-		runHeadlessInterceptor(*auditOnly)
-	} else {
-		// Run the premium Bubble Tea TUI for local developers
-		runTerminalUI()
+	if *runBenchmarkCmd {
+		runBenchmark()
+		return
 	}
 
-	licenseKey := resolveLicenseKey()
+	args := flag.Args()
+	if len(args) == 0 {
+		fmt.Println("\nError: No target MCP server command provided.")
+		fmt.Println("Usage: go run . [flags] <your_server_command>")
+		fmt.Println("\nFlags:")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
 
+	serverCmdString := strings.Join(args, " ")
+
+	licenseKey := resolveLicenseKey()
 	if licenseKey == "" {
 		fmt.Println("🚀 Booting Universal MCP Proxy in Free Open Core Mode...")
 		fmt.Println("   [Air-gapped Layer 1 & 2 Security Active. Enterprise modules locked.]")
@@ -181,15 +167,6 @@ func main() {
 			log.Fatalf("❌ Access Denied: Invalid or inactive license key")
 		}
 	}
-
-	if len(os.Args) < 2 {
-		fmt.Println("\nError: No target MCP server command provided.")
-		fmt.Println("Usage: go run . <your_server_command>")
-		os.Exit(1)
-	}
-
-	args := os.Args[1:]
-	serverCmdString := strings.Join(args, " ")
 
 	// --- PATH FIX: Resolve home directory to bypass Claude's Read-Only Sandbox ---
 	homeDir, err := os.UserHomeDir()
@@ -219,7 +196,11 @@ func main() {
 	pendingDecisionChan = make(chan bool)
 
 	fileInfo, _ := os.Stdout.Stat()
-	isHeadless := (fileInfo.Mode() & os.ModeCharDevice) == 0
+	isHeadless := *headlessMode || ((fileInfo.Mode() & os.ModeCharDevice) == 0)
+
+	if *auditOnly {
+		appLogger.Println("[CONFIG] Audit-Only mode active. Violations will be logged without blocking.")
+	}
 
 	var prog *tea.Program
 
