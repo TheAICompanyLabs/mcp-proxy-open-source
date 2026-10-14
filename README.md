@@ -1,6 +1,8 @@
-# ⚡ Terminal Circuit Breaker (for MCP)
+# Runtime Consequence Firewall (RCF)
+**Consequence-aware runtime enforcement at the execution boundary.**
 
-> **A zero-latency, air-gapped consequence firewall for local AI agents.**
+Traditional security gateways stop at identity and tool allowlists. RCF is a lightweight Go daemon that intercepts Model Context Protocol (MCP) invocations over `stdio` to prevent authorized agents from executing destructive side effects. 
+
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat-square&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
