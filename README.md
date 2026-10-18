@@ -91,6 +91,15 @@ Managing local `.yaml` files across hundreds of developers does not scale. Our u
 * Aggregate centralized audit logs across thousands of developer laptops.
 * Enforce cryptographic, tamper-evident log chains.
 
+
+| Evaluation Metric / Standardized Benchmark | Unprotected MCP (stdio + IAM Allowlists) | Cloud Perimeter Gateways (Prisma AIRS) | Container MCP Gateways (Stacklok ToolHive) | RCF v2.0 (mcp-proxy-fips) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Local stdio Pipe Visibility** | Blind | 0% Visibility (Network only) | Requires Docker/K8s wrapper | **100% Inline stdio Interception** (Single Go Binary) |
+| **BFCL 10-Agent Chaos Swarm (100+ Mutations)** | 0/100 Blocked (Compromised) | 0/100 Blocked | Passes post-auth mutations | **100% Blocked** in <1ms |
+| **MCPTox Post-Auth Tool Abuse Defense** | 72.8% Attack Success | Probabilistic LLM filter only | Stops at static tool-name ACLs | **Payload + Wasm Micro-VM Detonation** |
+| **Tool Schema Token Reduction** | 0% | 0% | 60%–85% | **94.00%–99.41%** (Okapi BM25) |
+| **Deployment Friction** | N/A | 6-9 Month VRM | K8s Cluster Required | **60-Sec `curl` Install + 14-Day Offline Lease** |
+
 ---
 
 ## 📄 License
