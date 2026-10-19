@@ -13,3 +13,11 @@ This directory contains the reproducible test harness and cryptographic WORM (Wr
 3. Run the complete multi-suite benchmark:
    ```bash
    python3 swarm_simulator.py --suite=all
+
+## How to Verify the WORM Ledger
+
+The proxy records all execution boundaries without sending raw prompts or codebase data to the cloud. You can verify the integrity of the attached ledger offline:
+
+```
+node verify-ledger.mjs audit-ledger.json
+```
