@@ -1,0 +1,24 @@
+{
+  "name": "RCF Benchmark Staging",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.21"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    }
+  },
+  "postCreateCommand": "npm install -g @modelcontextprotocol/server-filesystem @modelcontextprotocol/server-postgres @modelcontextprotocol/server-memory && chmod +x Benchmark_test/Releases/mcp-proxy-fips-linux-amd64",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "golang.go",
+        "ms-python.python"
+      ]
+    }
+  }
+}
