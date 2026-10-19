@@ -25,6 +25,8 @@ Run `shasum -a 256 <binary>` locally to verify integrity before execution:
   `665d7034b17fa2b316d6f2145ab071b14e72708a37b27ba4120bb24aa2573891`
 * **mcp-proxy-fips-windows-amd64.exe:**
   `b2f6afdb9445c21750aa1ccbdc7b186bde22331f3cf195ac03864dcead0a51cb`
+* **mcp-proxy-fips-linux-amd64:**
+  `ba40bcb04d8fd6c507dae6f3ea957424f19d52efe6c630911add123d8a723d09`
 
 ---
 
