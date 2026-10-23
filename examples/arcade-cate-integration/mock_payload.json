@@ -1,0 +1,51 @@
+[
+  {
+    "scenario": "SAFE_EXECUTION",
+    "cate_context": {
+      "user_id": "usr_arcade_982347",
+      "session_token": "ctx_live_883a91"
+    },
+    "mcp_request": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "read_financial_data",
+      "params": {
+        "report_id": "Q3_2026"
+      }
+    }
+  },
+  {
+    "scenario": "MALICIOUS_INJECTION",
+    "cate_context": {
+      "user_id": "usr_arcade_982347",
+      "session_token": "ctx_live_883a91"
+    },
+    "mcp_request": {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "method": "execute_tool",
+      "params": {
+        "name": "db_update_record",
+        "arguments": {
+          "table": "transactions",
+          "action": "DROP TABLE transactions;"
+        }
+      }
+    }
+  },
+  {
+    "scenario": "MISSING_IDENTITY_CONTEXT",
+    "cate_context": {},
+    "mcp_request": {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "method": "execute_tool",
+      "params": {
+        "name": "transfer_funds",
+        "arguments": {
+          "amount": 50000
+        }
+      }
+    }
+  }
+]
