@@ -22,3 +22,9 @@ sequenceDiagram
     else Safe
         RCF->>API: Execute Tool
     end
+```
+
+## Expected Output
+*(Simulating Safe Execution, Malicious Injection, and Missing Identity Context)*
+
+![CATE + RCF Terminal Output](./terminal_output.png)
