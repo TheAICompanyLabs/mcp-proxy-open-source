@@ -8,7 +8,8 @@ services:
       - ./:/workspace
     working_dir: /workspace
     environment:
-      - MCP_LICENSE_KEY=placekeyhere
+      # Securely pulls the key from the host machine's environment
+      - MCP_LICENSE_KEY=${MCP_LICENSE_KEY:?Error: MCP_LICENSE_KEY is not set. Please export it first.}
       - MCP_ENFORCEMENT_MODE=block
     command: >
       /bin/bash -c "
