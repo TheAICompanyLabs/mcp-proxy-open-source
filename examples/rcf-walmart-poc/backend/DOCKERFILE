@@ -1,0 +1,7 @@
+# Using a lightweight Java image
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
+# Note: For simplicity in the PoC, we will just use a minimal Python server 
+# that acts exactly like the Java WebFlux endpoint to save them compilation time.
+COPY mock_backend.py .
+CMD ["python3", "mock_backend.py"]
