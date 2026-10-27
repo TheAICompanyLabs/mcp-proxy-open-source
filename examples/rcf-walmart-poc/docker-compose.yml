@@ -8,10 +8,10 @@ services:
       - ./:/workspace
     working_dir: /workspace
     environment:
-      - MCP_LICENSE_KEY=mcp_live_eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbXZkd3IxODgwMDFsbGs1d2JzZnQxejNoIiwib3JnSWQiOiJjbXZkd3IwOHMwMDFqbGs1d2J2cHB5ZGhuIiwidGllciI6InRyaWFsIiwiY2FwYWJpbGl0aWVzIjpbInBvbGljeTpzeW5jIiwic2hhZG93Om1vZGUiXSwiaWF0IjoxNzkyMzMyOTMyLCJleHAiOjE3OTI5Mzc3MzJ9.QHtUROHlK2uXnvU4sgMIRKSHE5pmXLKCyLSS5A1Z58FSCrn1KtchlMXv7GrpRz3_LCsYGaix10ZstMsoSgvtBA
+      - MCP_LICENSE_KEY=mcp_live_eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbXZhb3Q1OHAwMDAybGtlenJ1YWxvdTBxIiwib3JnSWQiOiJjbXZhb3QzajkwMDAwbGtlenpsYzVqOXc3IiwidGllciI6InRyaWFsIiwiY2FwYWJpbGl0aWVzIjpbInBvbGljeTpzeW5jIiwic2hhZG93Om1vZGUiXSwiaWF0IjoxNzkyMTM4MTk1LCJleHAiOjE3OTI3NDI5OTV9.vQ-i4jqQjP-2D5Wok2qt1exo-aiCmkGZwc8O6GQ-31ibYrQhmRyUqTF695RHBjunMgo7YGnT1Ys9MAak_h-bDw
+      - MCP_ENFORCEMENT_MODE=block
     command: >
       /bin/bash -c "
-      echo 'export MCP_LICENSE_KEY=\"$$MCP_LICENSE_KEY\"' >> ~/.bashrc;
       javac backend/src/main/java/com/walmartlabs/checkout/McpExecutionController.java;
       chmod +x run_backend.sh;
       tail -f /dev/null
