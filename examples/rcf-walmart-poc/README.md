@@ -1,6 +1,12 @@
-## 🚨 The TOCTOU Exploit Payload (Test This Yourself)
+# Runtime Consequence Firewall (RCF) - Enterprise Air-Gapped Sandbox
 
-Traditional WSO2/API Gateways validate the `Authorization` header and pass the payload downstream. If an ADK Agent is compromised, it can execute the following payload to bypass traditional RBAC. 
+This repository provides a fully localized, zero-dependency staging environment to validate RCF's <1ms payload interception and SEC 17a-4 WORM audit logging against a simulated enterprise backend.
+
+## 1. Start the Environment
+Run the entire architecture (Backend + RCF Proxy + Load Tester) locally:
+```bash
+docker compose up --build
+
 
 Run this `curl` against the RCF proxy to watch the wazero micro-VM intercept the `override_query` parameter in <1ms:
 
