@@ -1,19 +1,16 @@
-package com.walmartlabs.checkout.agentic.api;
+package com.walmartlabs.checkout;
 
-import org.springframework.web.bind.annotation.*;
-import org.springframework.security.access.prepost.PreAuthorize;
-import reactor.core.publisher.Mono;
+import java.util.Scanner;
 
-@RestController
-@RequestMapping("/api/v3/mcp/orchestration")
 public class McpExecutionController {
-
-    @PostMapping(value = "/execute", consumes = "application/json", produces = "application/json")
-    @PreAuthorize("hasAuthority('SCOPE_ADK_EXECUTE')")
-    public Mono<String> executeAgentToolCall(@RequestBody String request) {
-        // If traffic reaches here, the proxy FAILED to block it.
-        // In a real scenario, this would execute against Aurora DB.
-        System.out.println("[BACKEND] Executing payload against Aurora...");
-        return Mono.just("{\"status\": \"success\", \"message\": \"Payload Executed\"}");
+    public static void main(String[] args) {
+        System.err.println("[WALMART-BACKEND] Spring Boot MCP Server Started. Listening on stdio...");
+        Scanner scanner = new Scanner(System.in);
+        
+        while (scanner.hasNextLine()) {
+            String payload = scanner.nextLine();
+            System.err.println("[WALMART-BACKEND] Received Payload. Executing against Aurora DB...");
+            System.out.println("{\"jsonrpc\": \"2.0\", \"id\": 1, \"result\": {\"status\": \"Executed in Aurora\"}}");
+        }
     }
 }

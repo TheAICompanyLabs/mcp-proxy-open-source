@@ -1,7 +1,21 @@
-# Using a lightweight Java image
-FROM eclipse-temurin:17-jdk-alpine
+# Build Stage
+FROM maven:3.9.5-eclipse-temurin-17 AS builder
 WORKDIR /app
-# Note: For simplicity in the PoC, we will just use a minimal Python server 
-# that acts exactly like the Java WebFlux endpoint to save them compilation time.
-COPY mock_backend.py .
-CMD ["python3", "mock_backend.py"]
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin:17-jdk-jammy
+
+# Install Node.js for SEC 17a-4 WORM Ledger Verification
+RUN apt-get update && apt-get install -y nodejs
+
+WORKDIR /workspace
+
+
+# Run Stage
+FROM eclipse-temurin:17
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
+EXPOSE 8080
+CMD ["java", "-jar", "app.jar"]
