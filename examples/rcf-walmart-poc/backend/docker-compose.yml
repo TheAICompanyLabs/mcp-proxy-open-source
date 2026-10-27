@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # 1. The Simulated Enterprise Backend 
+  target-backend:
+    build: 
+      context: ./backend
+    ports:
+      - "8080:8080"
+    networks:
+      - rcf-net
+
+  # 2. YOUR REAL PRODUCT (The RCF Proxy)
+  rcf-proxy:
+    image: ubuntu:22.04
+    volumes:
+      - ./rcf-bin/mcp-proxy-fips:/app/mcp-proxy-fips  # Mounts your real binary
+      - ./logs:/var/log/rcf                           # Mounts the audit log to your host machine
+    command: >
+      /app/mcp-proxy-fips 
+      --target http://target-backend:8080 
+      --port 8443 
+      --offline-worm /var/log/rcf/audit.log
+    ports:
+      - "8443:8443"
+    depends_on:
+      - target-backend
+    networks:
+      - rcf-net
+
+  # 3. The Real Asynchronous Load Tester
+  benchmark:
+    image: golang:1.21
+    volumes:
+      - ./benchmark:/app
+    working_dir: /app
+    command: go run rcf_load_tester.go
+    depends_on:
+      - rcf-proxy
+    networks:
+      - rcf-net
+
+networks:
+  rcf-net:
+    driver: bridge
