@@ -1,16 +1,18 @@
 # Runtime Consequence Firewall (RCF) - WalmartLabs Architecture Sandbox
 
-This air-gapped staging environment validates RCF's ability to act as a zero-trust `stdio` execution boundary for Spring Boot MCP architectures. It demonstrates sustained, high-volume agentic tool processing and sub-millisecond TOCTOU interception.
+This air-gapped staging environment validates RCF's ability to act as a zero-trust `stdio` execution boundary for Spring Boot MCP architectures.
 
-## 1. Boot the Sandbox
-Spin up the isolated Debian environment. The container automatically compiles the Java JVM backend and authenticates the RCF FIPS-140-3 proxy binary in `block` mode:
+## 1. Secure Authentication & Boot
+Export your provided Enterprise Staging License Key to authenticate the FIPS-140-3 proxy binary, then boot the sandbox.
 ```bash
+export MCP_LICENSE_KEY="<PASTE_YOUR_PROVIDED_KEY_HERE>"
 docker compose up -d --build
 docker compose exec sandbox /bin/bash
+
 ```
 
-## 2. The TOCTOU Exploit (Air-Gapped Interception)
-Traditional IAM protects the perimeter, but it misses post-auth SQL injections initiated by compromised internal agents. Execute the generated session through the proxy:
+## 2. Execute the Autonomous Agent Simulation
+Simulate a compromised agent processing 20+ legitimate cart validations before attempting a post-auth SQL injection.
 
 ```
 ./build_session.sh | ./mcp-proxy-fips ./run_backend.sh
