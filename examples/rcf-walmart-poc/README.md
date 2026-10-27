@@ -7,8 +7,9 @@ Run the entire architecture (Backend + RCF Proxy + Load Tester) locally:
 ```bash
 docker compose up --build
 
+```
 
-Run this `curl` against the RCF proxy to watch the wazero micro-VM intercept the `override_query` parameter in <1ms:
+## 2. Run this `curl` against the RCF proxy to watch the wazero micro-VM intercept the `override_query` parameter in <1ms:
 
 ```
 bash
