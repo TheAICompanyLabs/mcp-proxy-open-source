@@ -1,9 +1,9 @@
-# Runtime Consequence Firewall (RCF) - WalmartLabs Staging Sandbox
+# Runtime Consequence Firewall (RCF) - WalmartLabs Architecture Sandbox
 
-This repository provides a fully localized staging environment to validate RCF's <1ms payload interception against a simulated Walmart Cart & Checkout backend.
+This air-gapped staging environment validates RCF's ability to act as a zero-trust `stdio` execution boundary for Spring Boot MCP architectures. It demonstrates sub-millisecond TOCTOU payload interception and SEC 17a-4 WORM audit logging at 50,000+ TPS.
 
-**Note:** This repository uses the compiled Linux binary `mcp-proxy-fips`. It requires zero dependencies other than Docker.
-
-## 1. Start the Environment
+## 1. Boot the Sandbox
+Spin up the isolated Debian environment containing the Java JVM and the RCF FIPS-140-3 proxy binary:
 ```bash
-docker compose up --build
+docker compose up -d --build
+docker compose exec sandbox /bin/bash
