@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. The Simulated Enterprise Backend 
+  # 1. The Simulated Walmart Backend
   target-backend:
     build: 
       context: ./backend
@@ -10,12 +10,13 @@ services:
     networks:
       - rcf-net
 
-  # 2. YOUR REAL PRODUCT (The RCF Proxy)
+  # 2. THE REAL RCF PROXY
   rcf-proxy:
     image: ubuntu:22.04
     volumes:
-      - ./rcf-bin/mcp-proxy-fips:/app/mcp-proxy-fips  # Mounts your real binary
-      - ./logs:/var/log/rcf                           # Mounts the audit log to your host machine
+      # MUST DO THIS: Place your compiled Linux binary in the poc folder
+      - ./mcp-proxy-fips:/app/mcp-proxy-fips 
+      - ./logs:/var/log/rcf                           
     command: >
       /app/mcp-proxy-fips 
       --target http://target-backend:8080 
@@ -28,7 +29,7 @@ services:
     networks:
       - rcf-net
 
-  # 3. The Real Asynchronous Load Tester
+  # 3. The Asynchronous Load Tester
   benchmark:
     image: golang:1.21
     volumes:
