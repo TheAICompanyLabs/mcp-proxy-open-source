@@ -89,7 +89,7 @@ func handleLogin() {
 		log.Fatalf("❌ Failed to save credentials: %v", err)
 	}
 
-	configPath, _ := getConfigPath()
+	configPath, _ := GetConfigPath()
 	fmt.Printf("🔒 Credentials successfully stored in %s\n", configPath)
 	fmt.Println("🚀 You're all set! You can now run the proxy directly.")
 	os.Exit(0)

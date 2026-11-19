@@ -45,7 +45,7 @@ You don't need to be a cybersecurity expert to secure your local environment.
 ```bash
 # 1. Download your platform binary and checksums from GitHub Releases
 # (Replace darwin_arm64 with linux_amd64, linux_arm64, darwin_amd64, or windows_amd64.exe)
-VERSION="v1.0.1"
+VERSION="v1.1.1"
 BASE_URL="[https://github.com/TheAICompanyLabs/mcp-proxy-open-source/releases/download/$](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/releases/download/$){VERSION}"
 
 curl -fsSLO "${BASE_URL}/rcf-proxy_darwin_arm64"
