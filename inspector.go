@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"net/url"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -33,13 +35,43 @@ type InspectionResult struct {
 }
 
 func InspectPayload(toolName string, args map[string]interface{}) InspectionResult {
-	// ---------------------------------------------------------
-	// LAYER 1: UNIVERSAL GUARDRAILS (DLP, Security, & Semantic)
-	// ---------------------------------------------------------
 	for argKey, rawVal := range args {
 		valStr := fmt.Sprintf("%v", rawVal)
 
-		// 1. Check DLP
+		// ---------------------------------------------------------
+		// LAYER 2A: SEMANTIC PATH CANONICALIZATION (Pre-Inspection)
+		// ---------------------------------------------------------
+		// 1. Decode percent-encoding (e.g., %2e%2e%2f -> ../)
+		if unescaped, err := url.QueryUnescape(valStr); err == nil {
+			valStr = unescaped
+		}
+		// 2. Canonicalize path traversals (collapses /a/b/../../etc/passwd -> /etc/passwd)
+		cleanedPath := filepath.Clean(valStr)
+
+		// Check canonical traversal against Layer 1 guardrails
+		if universalTraversePattern.MatchString(valStr) || universalTraversePattern.MatchString(cleanedPath) {
+			return InspectionResult{
+				Blocked: true,
+				Action:  "DENY",
+				Message: fmt.Sprintf("Layer 2 Canonicalization [Security]: Directory traversal detected in '%s' (Resolved: %s).", argKey, cleanedPath),
+			}
+		}
+
+		// ---------------------------------------------------------
+		// LAYER 2B: NETWORK / SSRF CANONICALIZATION
+		// ---------------------------------------------------------
+		// Detect decimal IP (e.g., 2130706433 -> 127.0.0.1) and cloud metadata
+		if strings.Contains(valStr, "169.254.169.254") || strings.Contains(valStr, "2130706433") {
+			return InspectionResult{
+				Blocked: true,
+				Action:  "DENY",
+				Message: fmt.Sprintf("Layer 2 Egress Guardrail: SSRF / Private IP bypass attempt detected in '%s'.", argKey),
+			}
+		}
+
+		// ---------------------------------------------------------
+		// LAYER 1: UNIVERSAL GUARDRAILS (DLP & Semantic Traps)
+		// ---------------------------------------------------------
 		for secretType, scanner := range dlpScanners {
 			if scanner.MatchString(valStr) {
 				return InspectionResult{
@@ -50,7 +82,6 @@ func InspectPayload(toolName string, args map[string]interface{}) InspectionResu
 			}
 		}
 
-		// 2. Check Semantic Injection
 		for attackType, scanner := range semanticScanners {
 			if scanner.MatchString(valStr) {
 				return InspectionResult{
@@ -60,20 +91,9 @@ func InspectPayload(toolName string, args map[string]interface{}) InspectionResu
 				}
 			}
 		}
-
-		// 3. Check Path Traversal
-		if universalTraversePattern.MatchString(valStr) {
-			return InspectionResult{
-				Blocked: true,
-				Action:  "DENY",
-				Message: fmt.Sprintf("Universal Guardrail [Security]: Unauthorized directory traversal pattern detected in argument '%s'.", argKey),
-			}
-		}
 	}
 
-	// ---------------------------------------------------------
-	// LAYER 2: GRANULAR CONSTRAINTS (policy.yaml)
-	// ---------------------------------------------------------
+	// LAYER 2C: GRANULAR CONSTRAINTS (policy.yaml)
 	policyMu.RLock()
 	policy, exists := activePolicies[toolName]
 	if !exists {
@@ -89,7 +109,6 @@ func InspectPayload(toolName string, args map[string]interface{}) InspectionResu
 		for _, cond := range policy.Conditions {
 			if rawVal, exists := args[cond.Argument]; exists {
 				argVal := fmt.Sprintf("%v", rawVal)
-
 				if cond.Operator == "contains" && strings.Contains(argVal, cond.Value) {
 					return InspectionResult{Blocked: true, Action: policy.Action, Message: policy.Message}
 				}
@@ -104,9 +123,7 @@ func InspectPayload(toolName string, args map[string]interface{}) InspectionResu
 		return InspectionResult{Blocked: false}
 	}
 
-	// ---------------------------------------------------------
 	// LAYER 3: GLOBAL TOOL POLICY FALLBACK
-	// ---------------------------------------------------------
 	if policy.Action == "DENY" || policy.Action == "REQUIRE_APPROVAL" {
 		return InspectionResult{Blocked: true, Action: policy.Action, Message: policy.Message}
 	}

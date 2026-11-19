@@ -130,10 +130,11 @@ func main() {
 	headlessMode := flag.Bool("headless", false, "Run without TUI, emitting JSON logs to stderr")
 	auditOnly := flag.Bool("audit-only", false, "Log violations but fail-open (do not block execution)")
 	runBenchmarkCmd := flag.Bool("benchmark", false, "Run the local Agent Execution Security Benchmark")
+	baselineFlag := flag.Bool("baseline", false, "Run benchmark in unprotected baseline mode")
 	flag.Parse()
 
 	if *runBenchmarkCmd {
-		runBenchmark()
+		runBenchmark(*baselineFlag)
 		return
 	}
 

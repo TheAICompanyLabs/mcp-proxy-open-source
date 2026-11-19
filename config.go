@@ -27,17 +27,33 @@ func getConfigDir() (string, error) {
 }
 
 // getConfigPath returns the full path to ~/.mcp-proxy/config.json
-func getConfigPath() (string, error) {
-	dir, err := getConfigDir()
+
+// GetConfigPath returns the full path to ~/.mcp-proxy/config.json (License & Auth)
+func GetConfigPath() (string, error) {
+	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "config.json"), nil
+	configDir := filepath.Join(home, ".mcp-proxy")
+	// Ensure directory exists cross-platform
+	_ = os.MkdirAll(configDir, 0755)
+	return filepath.Join(configDir, "config.json"), nil
+}
+
+// GetPolicyPath returns the full path to ~/.mcp-proxy/policy.yaml (Security Rules)
+func GetPolicyPath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	configDir := filepath.Join(home, ".mcp-proxy")
+	_ = os.MkdirAll(configDir, 0755)
+	return filepath.Join(configDir, "policy.yaml"), nil
 }
 
 // LoadConfig reads the configuration file from disk
 func LoadConfig() (*Config, error) {
-	path, err := getConfigPath()
+	path, err := GetConfigPath()
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +76,7 @@ func LoadConfig() (*Config, error) {
 
 // SaveConfig persists the license key to disk with strict 0600 permissions
 func SaveConfig(cfg *Config) error {
-	path, err := getConfigPath()
+	path, err := GetConfigPath()
 	if err != nil {
 		return err
 	}
