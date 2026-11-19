@@ -1,0 +1,58 @@
+name: Verifiable Release (SHA-256 + SBOM + Cosign + SLSA)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Cross-compile reproducible Go binaries
+        run: |
+          mkdir -p release-dist
+          for target in "darwin/arm64" "darwin/amd64" "linux/amd64" "linux/arm64" "windows/amd64"; do
+            OS="${target%/*}"
+            ARCH="${target#*/}"
+            EXT=""
+            if [ "$OS" = "windows" ]; then EXT=".exe"; fi
+            CGO_ENABLED=0 GOOS=$OS GOARCH=$ARCH go build -trimpath -ldflags="-s -w -buildid=" \
+              -o "release-dist/rcf-proxy_${OS}_${ARCH}${EXT}" .
+          done
+          cd release-dist && sha256sum rcf-proxy_* > checksums.txt
+
+      - name: Generate SPDX-2.3 SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./
+          format: spdx-json
+          output-file: release-dist/sbom.spdx.json
+
+      - name: Install Cosign & Keyless Sign checksums.txt
+        uses: sigstore/cosign-installer@v3
+      - run: |
+          cosign sign-blob --yes \
+            --bundle release-dist/checksums.txt.sigstore.json \
+            release-dist/checksums.txt
+
+      - name: Attest Build Provenance (SLSA / gh attestation verify)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "release-dist/rcf-proxy_*"
+
+      - name: Publish Verified GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-dist/*

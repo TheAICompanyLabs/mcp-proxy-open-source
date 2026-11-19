@@ -39,7 +39,36 @@ You don't need to be a cybersecurity expert to secure your local environment.
 
 **macOS & Linux**
 ```bash
-curl -sSfL https://raw.githubusercontent.com/TheAICompanyLabs/mcp-proxy-open-source/main/scripts/install.sh | bash
+### Verified Installation (Zero Unverified `curl | bash`)
+
+**Option A — Verified Pre-Built Binary (SHA-256 + Sigstore Cosign + SLSA Attestation)**
+```bash
+# 1. Download your platform binary and checksums from GitHub Releases
+# (Replace darwin_arm64 with linux_amd64, linux_arm64, darwin_amd64, or windows_amd64.exe)
+VERSION="v1.0.1"
+BASE_URL="[https://github.com/TheAICompanyLabs/mcp-proxy-open-source/releases/download/$](https://github.com/TheAICompanyLabs/mcp-proxy-open-source/releases/download/$){VERSION}"
+
+curl -fsSLO "${BASE_URL}/rcf-proxy_darwin_arm64"
+curl -fsSLO "${BASE_URL}/checksums.txt"
+
+# 2. Verify SHA-256 integrity before execution
+shasum -a 256 --ignore-missing -c checksums.txt
+
+# 3. (Optional) Verify GitHub SLSA build provenance
+gh attestation verify rcf-proxy_darwin_arm64 -R TheAICompanyLabs/mcp-proxy-open-source
+
+# 4. Make executable and run
+chmod +x rcf-proxy_darwin_arm64
+./rcf-proxy_darwin_arm64 --help
+
+```
+
+** Option B — Build Reproducibly From Source (Go 1.23+)
+```
+git clone [https://github.com/TheAICompanyLabs/mcp-proxy-open-source.git](https://github.com/TheAICompanyLabs/mcp-proxy-open-source.git)
+cd mcp-proxy-open-source
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o rcf-proxy .
+./rcf-proxy --help
 ```
 
 **Windows (PowerShell)**
