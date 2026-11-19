@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -26,7 +27,14 @@ var semanticScanners = map[string]*regexp.Regexp{
 	"TOOL_MANIPULATION":  regexp.MustCompile(`(?i)(bypass\s+(security|guardrails|filters))`),
 }
 
-var universalTraversePattern = regexp.MustCompile(`(\.\.\/|^\/etc\/|^\/var\/run\/)`)
+// LAYER 2: Deterministic Execution & Parameter AST Guardrails (OWASP MCP Top 10 Baseline)
+var (
+	unicodeEscapePattern     = regexp.MustCompile(`\\u([0-9a-fA-F]{4})`)
+	universalTraversePattern = regexp.MustCompile(`(\.\./|/etc/(?:passwd|shadow|sudoers)|^/etc/|^/var/run/)`)
+	sensitiveFilePattern     = regexp.MustCompile(`(?i)(^|/)(\.env(\.[a-z0-9_-]+)?|\.ssh/(id_rsa|id_ed25519|authorized_keys|config)|\.aws/credentials|\.kube/config|\.npmrc|\.pypirc)$`)
+	destructiveSQLPattern    = regexp.MustCompile(`(?i)\b(DROP\s+(TABLE|DATABASE|SCHEMA|INDEX)|TRUNCATE\s+TABLE|ALTER\s+SYSTEM)\b`)
+	shellInjectionPattern    = regexp.MustCompile(`(?i)((?:[;&|]|\$\()\s*(?:rm|curl|wget|nc|ncat|bash|sh|zsh|python[23]?|perl|ruby|chmod|chown|dd|mkfs)\b|\brm\s+-[a-zA-Z]*[rf][a-zA-Z]*\s+)`)
+)
 
 type InspectionResult struct {
 	Blocked bool
@@ -34,33 +42,66 @@ type InspectionResult struct {
 	Message string
 }
 
+// canonicalizeValue iteratively decodes literal \uXXXX escapes and nested percent-encoding (e.g., %252e -> ..)
+func canonicalizeValue(input string) string {
+	s := unicodeEscapePattern.ReplaceAllStringFunc(input, func(match string) string {
+		if code, err := strconv.ParseInt(match[2:], 16, 32); err == nil {
+			return string(rune(code))
+		}
+		return match
+	})
+
+	for i := 0; i < 5; i++ {
+		unescaped, err := url.PathUnescape(s)
+		if err != nil || unescaped == s {
+			break
+		}
+		s = unescaped
+	}
+
+	return strings.ReplaceAll(s, "\\", "/")
+}
+
 func InspectPayload(toolName string, args map[string]interface{}) InspectionResult {
 	for argKey, rawVal := range args {
-		valStr := fmt.Sprintf("%v", rawVal)
-
-		// ---------------------------------------------------------
-		// LAYER 2A: SEMANTIC PATH CANONICALIZATION (Pre-Inspection)
-		// ---------------------------------------------------------
-		// 1. Decode percent-encoding (e.g., %2e%2e%2f -> ../)
-		if unescaped, err := url.QueryUnescape(valStr); err == nil {
-			valStr = unescaped
-		}
-		// 2. Canonicalize path traversals (collapses /a/b/../../etc/passwd -> /etc/passwd)
+		valStr := canonicalizeValue(fmt.Sprintf("%v", rawVal))
 		cleanedPath := filepath.Clean(valStr)
 
-		// Check canonical traversal against Layer 1 guardrails
+		// LAYER 2A: PATH TRAVERSAL & CREDENTIAL FILE ISOLATION
 		if universalTraversePattern.MatchString(valStr) || universalTraversePattern.MatchString(cleanedPath) {
 			return InspectionResult{
 				Blocked: true,
 				Action:  "DENY",
-				Message: fmt.Sprintf("Layer 2 Canonicalization [Security]: Directory traversal detected in '%s' (Resolved: %s).", argKey, cleanedPath),
+				Message: fmt.Sprintf("Layer 2 Canonicalization [Security]: Directory traversal or system path detected in '%s' (Resolved: %s).", argKey, cleanedPath),
 			}
 		}
 
-		// ---------------------------------------------------------
-		// LAYER 2B: NETWORK / SSRF CANONICALIZATION
-		// ---------------------------------------------------------
-		// Detect decimal IP (e.g., 2130706433 -> 127.0.0.1) and cloud metadata
+		if sensitiveFilePattern.MatchString(valStr) || sensitiveFilePattern.MatchString(cleanedPath) {
+			return InspectionResult{
+				Blocked: true,
+				Action:  "DENY",
+				Message: fmt.Sprintf("Layer 2 Credential Isolation: Sensitive secret/key file access blocked in '%s'.", argKey),
+			}
+		}
+
+		// LAYER 2B: SHELL INJECTION & DESTRUCTIVE SQL DDL GUARDRAILS
+		if shellInjectionPattern.MatchString(valStr) {
+			return InspectionResult{
+				Blocked: true,
+				Action:  "DENY",
+				Message: fmt.Sprintf("Layer 2 Execution Guardrail: Shell command chaining or destructive binary invocation blocked in '%s'.", argKey),
+			}
+		}
+
+		if destructiveSQLPattern.MatchString(valStr) {
+			return InspectionResult{
+				Blocked: true,
+				Action:  "DENY",
+				Message: fmt.Sprintf("Layer 2 Data Guardrail: Destructive SQL DDL statement blocked in '%s'.", argKey),
+			}
+		}
+
+		// LAYER 2C: NETWORK / SSRF CANONICALIZATION
 		if strings.Contains(valStr, "169.254.169.254") || strings.Contains(valStr, "2130706433") {
 			return InspectionResult{
 				Blocked: true,
@@ -69,9 +110,7 @@ func InspectPayload(toolName string, args map[string]interface{}) InspectionResu
 			}
 		}
 
-		// ---------------------------------------------------------
-		// LAYER 1: UNIVERSAL GUARDRAILS (DLP & Semantic Traps)
-		// ---------------------------------------------------------
+		// LAYER 1: UNIVERSAL GUARDRAILS (DLP & Prompt Injection)
 		for secretType, scanner := range dlpScanners {
 			if scanner.MatchString(valStr) {
 				return InspectionResult{
@@ -93,7 +132,7 @@ func InspectPayload(toolName string, args map[string]interface{}) InspectionResu
 		}
 	}
 
-	// LAYER 2C: GRANULAR CONSTRAINTS (policy.yaml)
+	// LAYER 2D: GRANULAR CONSTRAINTS (policy.yaml)
 	policyMu.RLock()
 	policy, exists := activePolicies[toolName]
 	if !exists {
@@ -108,7 +147,7 @@ func InspectPayload(toolName string, args map[string]interface{}) InspectionResu
 	if len(policy.Conditions) > 0 {
 		for _, cond := range policy.Conditions {
 			if rawVal, exists := args[cond.Argument]; exists {
-				argVal := fmt.Sprintf("%v", rawVal)
+				argVal := canonicalizeValue(fmt.Sprintf("%v", rawVal))
 				if cond.Operator == "contains" && strings.Contains(argVal, cond.Value) {
 					return InspectionResult{Blocked: true, Action: policy.Action, Message: policy.Message}
 				}
